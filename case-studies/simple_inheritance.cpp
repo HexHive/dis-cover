@@ -1,27 +1,34 @@
+#include<iostream>
+using namespace std;
+
 class A {
  public:
   int a;
-  virtual void af1() {
-    a = 23;
+  virtual void f1() {
+    cout << "Af1()\n";
   }
-  virtual void af2() {
-    a = 42;
+  virtual void f2() {
+    cout << "Af2()\n";
   }
 };
 
 class B : public A {
   public:
     int b;
+  virtual void f1() {
+    cout << "Bf1\n";
+  }
 };
 
-int main() {
-  B *b1;
-  b1 = new B();
-  B *b2;
-  b2 = new B();
-  b1->af1();
-  b1->af2();
-  b2->af2();
-  delete b1;
-  delete b2;
+int main(int argc, char *argv[]) {
+  A *a;
+  if (argc == 0) {
+    a = new A();
+  } else {
+    a = new B();
+  }
+  a->f1();
+  a->f2();
+  a->f1();
+  delete a;
 }
