@@ -8,6 +8,15 @@ build:
 shell: build
 	docker run --rm -v "${PWD}:/home/dis-cover/dis-cover" -it dis-cover bash
 
-.PHONY=simple_inheritance
-simple_inheritance: build
+.PHONY=run_scenarios
+run_scenarios: build
 	docker run --rm -v "${PWD}:/home/dis-cover/dis-cover" -it dis-cover dis-cover -c case-studies/simple_inheritance.cpp -o case-studies/outputs
+
+.PHONY=clean
+clean:
+	rm case-studies/outputs/*
+
+.PHONY=lint
+lint: build
+	docker run --rm -v "${PWD}:/home/dis-cover/dis-cover" -it dis-cover black .
+	docker run --rm -v "${PWD}:/home/dis-cover/dis-cover" -it dis-cover clang-format -i case-studies/*.cpp
