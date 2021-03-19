@@ -8,7 +8,13 @@ def main():
         description="Disasemble binaries and recover as much info as possible"
     )
     argp.add_argument("file", type=str, help="File to dis-cover")
-    argp.add_argument("-o", "--output_directory", type=str, default="/tmp", help="Directory where the temporary files are written")
+    argp.add_argument(
+        "-o",
+        "--output_directory",
+        type=str,
+        default="/tmp",
+        help="Directory where the temporary files are written",
+    )
     # TODO Add dwarf output file
     group = argp.add_mutually_exclusive_group()
     group.add_argument(
@@ -25,8 +31,9 @@ def main():
         help="Compile C++ file under multiple scenarios and extract info from the given outputs",
     )
     arguments = argp.parse_args()
-    
+
     if arguments.cpp:
         run_scenarios(arguments.file, arguments.output_directory)
-    elif arguments.bin: # It's important to check this last, as it defaults to True
+    # It's important to check this last, as it defaults to True
+    elif arguments.bin:
         analyse(arguments.file)
