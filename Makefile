@@ -5,9 +5,9 @@ build:
 	--build-arg GROUP_ID=$(shell id -g) .
 
 .PHONY=shell
-shell:
+shell: build
 	docker run --rm -v "${PWD}:/home/dis-cover/dis-cover" -it dis-cover bash
 
 .PHONY=simple_inheritance
-simple_inheritance:
-	docker run --rm -v "${PWD}:/home/dis-cover/dis-cover" -it dis-cover dis-cover -c case_studies/simple_inheritance.cpp -o case_studies/outputs
+simple_inheritance: build
+	docker run --rm -v "${PWD}:/home/dis-cover/dis-cover" -it dis-cover dis-cover -c case-studies/simple_inheritance.cpp -o case-studies/outputs
