@@ -18,6 +18,9 @@ def analyse(elf_file_name):
     md = Cs(CS_ARCH_X86, CS_MODE_64)
     md.detail = True
 
+    # The number of vtable calls we find
+    vtable_calls = 0
+
     # We keep a copy of the previous instructions, that will be of use in the loop
     prev_instructions = []
 
@@ -33,12 +36,17 @@ def analyse(elf_file_name):
                     and prev.operands[0].reg == X86_REG_RDI
                     and prev.operands[1].type == X86_OP_REG
                 ):
+                    """
                     # We print the two assembly lines
                     print("0x%x:\t%s\t%s" % (prev.address, prev.mnemonic, prev.op_str))
                     print("0x%x:\t%s\t%s" % (i.address, i.mnemonic, i.op_str))
                     print()
+                    """
+                    vtable_calls += 1
 
         # Here we keep track of the latest instructions
         prev_instructions.append(i)
         if len(prev_instructions) > 3:
             prev_instructions = prev_instructions[1:4]
+    
+    return vtable_calls

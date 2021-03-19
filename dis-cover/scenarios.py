@@ -23,4 +23,4 @@ def run_scenarios(source_file_name, output_directory):
         for option in OPTIONS:
             elf_file_name = compile_under_scenario(source_file_name, (compiler, option), output_directory)
             results = analyse(elf_file_name)
-            # TODO Analyse results
+            print("\tFound \033[1m%d\033[0m vtable calls" % results)
