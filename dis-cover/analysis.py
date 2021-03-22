@@ -69,7 +69,18 @@ class Analysis:
         # Step 2 : Find all potential vtables by finding empty spaces that might
         #          be the offset-to-top section.
 
-        # TODO
+        data_section = self.elffile.get_section_by_name(".data.rel.ro")
+        data = data_section.data()
+
+        print("\n\tAnalysis of the .data.rel.ro section\n")
+
+        current_address = data_section["sh_addr"]
+
+        for i in range(round(len(data) / 8)):
+            line = list(data[8 * i:8 * i + 8])
+            line.reverse()
+            print("\t\t0x%x\t%s" % (current_address, "".join([format(d, "02x") for d in line])))
+            current_address += 8
 
         # Step 3 : Differenciate between vtables and their associated RTTI by
         #          finding the pointers to RTTIs at the beginning of the vtables
@@ -77,11 +88,7 @@ class Analysis:
 
         # TODO
 
-        data_section = self.elffile.get_section_by_name(".data.rel.ro")
 
-        data = data_section.data()
-        for i in range(round(len(data) / 8)):
-            print("".join([format(d, "02x") for d in data[8 * i : 8 * i + 8]]))
 
 
 """
