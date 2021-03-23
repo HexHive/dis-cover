@@ -3,10 +3,48 @@ from capstone import *
 from capstone.x86_const import *
 
 
+class Entry:
+    """A table entry"""
+
+    def __init__(self, address, value, section):
+        self.address = address
+        self.value = value
+        self.section = section
+
+        description = "?"
+        if self.is_offset_to_top():
+            description = "Offset-to-Top"
+        elif self.section == ".data.rel.ro":
+            description = "&RTTI"
+        elif self.section == ".text":
+            description = "&Function-Entry"
+        elif self.section == ".rodata":
+            description = "&__type_name"
+        self.description = description
+
+    def is_offset_to_top(self):
+        return int(self.value, 16) == 0
+
+    def __str__(self):
+        return "\t\t0x%x\t%s\t[%s]" % (self.address, self.value, self.description)
+
+
+class Table:
+    """A vtable or RTTI table"""
+
+    is_rtti = False
+    is_vtable = False
+    entries = []
+
+    def __init__(self, address):
+        self.address = address
+
+
 class Analysis:
     """An analysis of an ELF file"""
 
     vfunc_calls = 0
+    tables = []
 
     def __init__(self, file_name):
         f = open(file_name, "rb")
@@ -93,20 +131,20 @@ class Analysis:
         for i in range(round(len(data) / 8)):
             line = list(data[8 * i : 8 * i + 8])
             line.reverse()
-            address_str = "".join([format(d, "02x") for d in line])
-            address = int(address_str, 16)
+            line_str = "".join([format(d, "02x") for d in line])
+            address = int(line_str, 16)
             section = self.get_section_name(address)
-            description = "?"
-            if address == 0:
-                description = "Offset-to-Top"
+
+            entry = Entry(current_address, line_str, section)
+
+            if entry.is_offset_to_top():
                 print()
-            elif section == ".data.rel.ro":
-                description = "&RTTI"
-            elif section == ".text":
-                description = "&Function-Entry"
-            elif section == ".rodata":
-                description = "&__type_name"
-            print("\t\t0x%x\t%s\t[%s]" % (current_address, address_str, description))
+                self.tables.append(Table(current_address))
+
+            self.tables[-1].entries.append(entry)
+
+            print(entry)
+
             current_address += 8
 
         # Step 3 : Differenciate between vtables and their associated RTTI by
