@@ -11,6 +11,20 @@ class Analysis:
     def __init__(self, file_name):
         f = open(file_name, "rb")
         self.elffile = ELFFile(f)
+        self.sections = []
+        for section in self.elffile.iter_sections():
+            self.sections.append(
+                (section["sh_addr"] + section["sh_size"], section.name)
+            )
+        self.sections.sort(key=lambda i: i[0])
+
+    def get_section_name(self, addr):
+        if addr < 0:
+            return "out of bounds"
+        for (end, name) in self.sections:
+            if addr < end:
+                return name
+        return "out of bounds"
 
     def find_vfunc_calls(self):
 
@@ -72,14 +86,27 @@ class Analysis:
         data_section = self.elffile.get_section_by_name(".data.rel.ro")
         data = data_section.data()
 
-        print("\n\tAnalysis of the .data.rel.ro section\n")
+        print("\n\tAnalysis of the .data.rel.ro section")
 
         current_address = data_section["sh_addr"]
 
         for i in range(round(len(data) / 8)):
-            line = list(data[8 * i:8 * i + 8])
+            line = list(data[8 * i : 8 * i + 8])
             line.reverse()
-            print("\t\t0x%x\t%s" % (current_address, "".join([format(d, "02x") for d in line])))
+            address_str = "".join([format(d, "02x") for d in line])
+            address = int(address_str, 16)
+            section = self.get_section_name(address)
+            description = "?"
+            if address == 0:
+                description = "Offset-to-Top"
+                print()
+            elif section == ".data.rel.ro":
+                description = "&RTTI"
+            elif section == ".text":
+                description = "&Function-Entry"
+            elif section == ".rodata":
+                description = "&__type_name"
+            print("\t\t0x%x\t%s\t[%s]" % (current_address, address_str, description))
             current_address += 8
 
         # Step 3 : Differenciate between vtables and their associated RTTI by
@@ -87,32 +114,6 @@ class Analysis:
         #          and in other related RTTIs.
 
         # TODO
-
-
-
-
-"""
-
-vtable for A
-0000000000000000 => Offset-to-top
-783d000000000000 => -> ZTI1A (Pointer to A, RTTI, Run-Time Type Information)
-9a11000000000000 => -> ZN1A1fEv (Pointer to A->f)
-
-RTTI for A
-0000000000000000 => ZTI1A
-0420000000000000 => ZTI1A
-
-vtable for B
-0000000000000000 => Offset-to-top
-a03d000000000000 => -> ZTI1B (Pointer to B, RTTI, Run-Time Type Information)
-9c11000000000000 => -> ZN1B1fEv (Pointer to B->f)
-
-RTTI for B
-0000000000000000 => ZTI1B
-0720000000000000 => ZTI1B
-783d000000000000 => -> ZTI1A (parent)
-
-"""
 
 
 def analyse(elf_file_name):

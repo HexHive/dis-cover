@@ -1,23 +1,23 @@
-class A {
+class Shape {
 public:
-  virtual void f() {}
+  virtual void draw() {}
 };
 
-class B : public A {
+class Rectangle : public Shape {
 public:
-  virtual void f() {}
+  virtual void draw() {}
 };
 
 int main(int argc, char *argv[]) {
-  A *a_or_b;
+  Shape *shape;
 
   if (argc == 0) {
-    a_or_b = new A();
+    shape = new Shape();
   } else {
-    a_or_b = new B();
+    shape = new Rectangle();
   }
 
-  a_or_b->f();
+  shape->draw();
 
-  delete a_or_b;
+  delete shape;
 }
