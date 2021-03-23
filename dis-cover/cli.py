@@ -10,7 +10,7 @@ def main():
     argp.add_argument("file", type=str, help="File to dis-cover")
     argp.add_argument(
         "-o",
-        "--output_directory",
+        "--output-directory",
         type=str,
         default="/tmp",
         help="Directory where the temporary files are written",
