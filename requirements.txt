@@ -1,2 +1,3 @@
 pyelftools>=0.27
 capstone>=4.0.2
+itanium_demangler>=1.0
