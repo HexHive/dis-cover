@@ -32,21 +32,19 @@ class Entry:
 class Table:
     """A vtable or RTTI table"""
 
-    is_rtti = False
-    is_vtable = False
-    entries = []
-
     def __init__(self, address):
         self.address = address
+        self.is_rtti = False
+        self.is_vtable = False
+        self.entries = []
 
 
 class Analysis:
     """An analysis of an ELF file"""
 
-    vfunc_calls = 0
-    tables = []
-
     def __init__(self, file_name):
+        self.tables = []
+        self.vfunc_calls = 0
         f = open(file_name, "rb")
         self.elffile = ELFFile(f)
         self.sections = []
