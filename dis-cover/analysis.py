@@ -43,10 +43,26 @@ class Table:
 
     def get_name(self):
         if self.is_RTTI:
-            return self.name
+            return str(self.name)
         elif self.is_vtable and self.associated_RTTI:
             return self.associated_RTTI.get_name()
-        return "Unknown Name"
+        return "Unknown"
+
+    def __str__(self):
+        output = ""
+        if self.is_RTTI:
+            output += "RTTI "
+        elif self.is_vtable:
+            output += "vtable "
+        else:
+            output += "unknown "
+        output += "table :\n"
+        output += "\tName : %s\n" % self.get_name()
+        if len(self.inherits_from) > 0:
+            output += "\tInherits from : %s\n" % ", ".join(
+                [t.get_name() for t in self.inherits_from]
+            )
+        return output
 
 
 class Analysis:
@@ -55,7 +71,8 @@ class Analysis:
     def __init__(self, file_name):
         self.tables = []
         self.vfunc_calls = 0
-        f = open(file_name, "rb")
+        self.file_name = file_name
+        f = open(self.file_name, "rb")
         self.elffile = ELFFile(f)
         self.sections = []
         for section in self.elffile.iter_sections():
@@ -73,10 +90,10 @@ class Analysis:
         return "out of bounds"
 
     def extract_name(self, addr):
-        section_name = self.get_section_name(int(addr, 16))
+        section_name = self.get_section_name(addr)
         section = self.elffile.get_section_by_name(section_name)
         section_data = section.data()
-        relative_address = int(addr, 16) - section["sh_addr"]
+        relative_address = addr - section["sh_addr"]
         if relative_address > 0 and relative_address < len(section_data):
             name = "_Z"
             while (
@@ -86,6 +103,15 @@ class Analysis:
                 name += chr(section_data[relative_address])
                 relative_address += 1
             return demangle(name)
+
+    def find_table(self, addr):
+        for table in self.tables:
+            if table.address == addr:
+                return table
+
+    def __str__(self):
+        output = "Analysis of %s\n" % self.file_name
+        return output + "\n".join([str(table) for table in self.tables])
 
     def find_vfunc_calls(self):
 
@@ -143,8 +169,6 @@ class Analysis:
         data_section = self.elffile.get_section_by_name(".data.rel.ro")
         data = data_section.data()
 
-        print("\n\tAnalysis of the .data.rel.ro section")
-
         current_address = data_section["sh_addr"]
 
         for i in range(round(len(data) / 8)):
@@ -157,12 +181,9 @@ class Analysis:
             entry = Entry(current_address, line_str, section)
 
             if entry.is_offset_to_top():
-                print()
                 self.tables.append(Table(current_address))
 
             self.tables[-1].entries.append(entry)
-
-            print(entry)
 
             current_address += 8
 
@@ -176,19 +197,19 @@ class Analysis:
                 # an RTTI, then the table is a vtable.
                 if i == 1 and entry.section == ".data.rel.ro":
                     table.is_vtable = True
-                    # TODO find the table object associated with this address
-                    table.associated_RTTI = entry.value
+                    pointer_address = int(entry.value, 16)
+                    table.associated_RTTI = self.find_table(pointer_address)
                 # Else if the first entry after the offset_to_top is a pointer
                 # to __type_name, then the table is an RTTI.
                 elif i == 1 and entry.section == ".rodata":
                     table.is_RTTI = True
-                    table.name = self.extract_name(entry.value)
-                    print(table.name)
+                    pointer_address = int(entry.value, 16)
+                    table.name = self.extract_name(pointer_address)
                 # Else if the table is an RTTI and the entry is a pointer to
                 # another RTTI, then there is inheritance.
                 elif table.is_RTTI and entry.section == ".data.rel.ro":
-                    # TODO find the table object associated with this address
-                    table.inherits_from.append(entry.value)
+                    pointer_address = int(entry.value, 16)
+                    table.inherits_from.append(self.find_table(pointer_address))
 
 
 def analyse(elf_file_name):

@@ -39,4 +39,4 @@ def run_scenarios(source_file_name, output_directory):
                 source_file_name, (compiler, option), output_directory
             )
             results = analyse(elf_file_name)
-            print("\n\tFound \033[1m%d\033[0m vtable call(s)" % results.vfunc_calls)
+            print(results)

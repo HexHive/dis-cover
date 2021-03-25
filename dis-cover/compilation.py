@@ -19,10 +19,12 @@ def compile_under_scenario(source_file_name, scenario, output_directory):
         "-o",
         output_file_name,
     ]
+    """
     print(
         "Compilation details : \033[1m%s\033[0m and \033[1m%s\033[0m"
         % (compiler, option)
     )
+    """
     process = subprocess.run(command)
     if process.returncode == 0:
         return output_file_name
