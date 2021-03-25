@@ -78,16 +78,14 @@ class Analysis:
         section_data = section.data()
         relative_address = int(addr, 16) - section["sh_addr"]
         if relative_address > 0 and relative_address < len(section_data):
-            # name = '_ZTS'
-            name = ""
+            name = "_Z"
             while (
                 relative_address < len(section_data)
                 and section_data[relative_address] != 0
             ):
                 name += chr(section_data[relative_address])
                 relative_address += 1
-            # print(demangle(name))
-            return name
+            return demangle(name)
 
     def find_vfunc_calls(self):
 
@@ -139,11 +137,7 @@ class Analysis:
 
     def extract_vtables(self):
 
-        # Step 1 : See what parts of the data section are referenced to in the code
-
-        # TODO
-
-        # Step 2 : Find all potential tables by finding empty spaces that might
+        # Step 1 : Find all potential tables by finding empty spaces that might
         #          be the offset-to-top section, and create a Table for them.
 
         data_section = self.elffile.get_section_by_name(".data.rel.ro")
@@ -172,7 +166,7 @@ class Analysis:
 
             current_address += 8
 
-        # Step 3 : Differenciate between vtables and their associated RTTI by
+        # Step 2 : Differenciate between vtables and their associated RTTI by
         #          finding the pointers to RTTIs at the beginning of the vtables
         #          and in other related RTTIs.
 
