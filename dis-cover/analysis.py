@@ -48,19 +48,21 @@ class Table:
             return self.associated_RTTI.get_name()
         return "Unknown"
 
+    def get_methods_count(self):
+        return len(filter(lambda e: e.section == ".text", self.entries))
+
     def __str__(self):
         output = ""
         if self.is_RTTI:
             output += "RTTI "
         elif self.is_vtable:
-            output += "vtable "
+            output += "class "
         else:
             output += "unknown "
-        output += "table :\n"
-        output += "\tName : %s\n" % self.get_name()
-        if len(self.inherits_from) > 0:
-            output += "\tInherits from : %s\n" % ", ".join(
-                [t.get_name() for t in self.inherits_from]
+        output += "\t%s" % self.get_name()
+        if self.associated_RTTI and len(self.associated_RTTI.inherits_from) > 0:
+            output += "\tinherits from %s" % ", ".join(
+                [t.get_name() for t in self.associated_RTTI.inherits_from]
             )
         return output
 
@@ -111,7 +113,8 @@ class Analysis:
 
     def __str__(self):
         output = "Analysis of %s\n" % self.file_name
-        return output + "\n".join([str(table) for table in self.tables])
+        vtables = filter(lambda t: t.is_vtable, self.tables)
+        return output + "\n".join([str(table) for table in vtables])
 
     def find_vfunc_calls(self):
 

@@ -34,9 +34,9 @@ def run_scenarios(source_file_name, output_directory):
 
     for compiler in COMPILERS:
         for option in OPTIONS:
-            print()
             elf_file_name = compile_under_scenario(
                 source_file_name, (compiler, option), output_directory
             )
             results = analyse(elf_file_name)
+            print("-" * 80)
             print(results)
