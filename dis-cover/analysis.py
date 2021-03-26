@@ -96,7 +96,7 @@ class Analysis:
         section = self.elffile.get_section_by_name(section_name)
         section_data = section.data()
         relative_address = addr - section["sh_addr"]
-        if relative_address > 0 and relative_address < len(section_data):
+        if relative_address >= 0 and relative_address < len(section_data):
             name = "_Z"
             while (
                 relative_address < len(section_data)
