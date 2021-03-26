@@ -11,6 +11,7 @@ shell: build
 .PHONY=run_scenarios
 run_scenarios: build
 	docker run --rm -v "${PWD}:/home/dis-cover/dis-cover" -it dis-cover dis-cover -c case-studies/simple_inheritance.cpp -o case-studies/outputs
+	docker run --rm -v "${PWD}:/home/dis-cover/dis-cover" -it dis-cover dis-cover -c case-studies/diamond_problem.cpp -o case-studies/outputs
 
 .PHONY=clean
 clean:
