@@ -17,7 +17,7 @@ RUN useradd -m -r -u $USER_ID -g $GROUP_ID dis-cover
 WORKDIR /home/dis-cover/dis-cover
 
 # Install python dependencies
-RUN pip install black
+RUN pip install black IPython
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 
