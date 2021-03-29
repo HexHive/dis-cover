@@ -4,6 +4,12 @@ from capstone.x86_const import *
 from itanium_demangler import parse as demangle
 
 
+class CppClass:
+    def __init__(self, name):
+        self.name = name
+        self.inherits_from = set()
+
+
 class Entry:
     """A table entry"""
 
@@ -67,7 +73,7 @@ class Table:
         return output
 
 
-class Analysis:
+class ElfAnalysis:
     """An analysis of an ELF file"""
 
     def __init__(self, file_name):
@@ -115,6 +121,18 @@ class Analysis:
         output = "Analysis of %s\n" % self.file_name
         vtables = filter(lambda t: t.is_vtable, self.tables)
         return output + "\n".join([str(table) for table in vtables])
+
+    def get_classes(self):
+        classes = []
+        vtables = filter(lambda t: t.is_vtable, self.tables)
+        for vtable in vtables:
+            cpp_class = CppClass(vtable.get_name())
+            if vtable.associated_RTTI and len(vtable.associated_RTTI.inherits_from) > 0:
+                cpp_class.inherits_from = {
+                    t.get_name() for t in vtable.associated_RTTI.inherits_from
+                }
+            classes.append(cpp_class)
+        return classes
 
     def find_vfunc_calls(self):
 
@@ -217,7 +235,7 @@ class Analysis:
 
 def analyse(elf_file_name):
 
-    analysis = Analysis(elf_file_name)
+    analysis = ElfAnalysis(elf_file_name)
 
     analysis.extract_vtables()
     analysis.find_vfunc_calls()
