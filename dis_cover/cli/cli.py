@@ -1,6 +1,6 @@
 import argparse
-from analysis import analyse
-from scenarios import run_scenarios
+from ..analysis import analyse
+from ..scenarios import run_scenarios
 
 
 def main():
@@ -36,4 +36,4 @@ def main():
         run_scenarios(arguments.file, arguments.output_directory)
     # It's important to check this last, as it defaults to True
     elif arguments.bin:
-        analyse(arguments.file)
+        print(analyse(arguments.file))

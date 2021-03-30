@@ -3,10 +3,16 @@ FROM python:3.9.2-alpine
 RUN apk update
 RUN apk add g++ clang bash make && rm -rf /var/cache/apk/*
 
+# Create a user that has the same GID and UID as you
+ARG GROUP_ID
+ARG USER_ID
+RUN addgroup -g $GROUP_ID dis-cover
+RUN adduser -D -u $USER_ID -G dis-cover dis-cover
+
 # Work directory
 WORKDIR /home/dis-cover/dis-cover
 
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 
-RUN ln -s /home/dis-cover/dis-cover/dis_cover/__main__.py /bin/dis-cover
+USER dis-cover

@@ -1,7 +1,7 @@
 from elftools.elf.elffile import ELFFile
 from elftools.dwarf.enums import ENUM_DW_TAG
-from compilation import compile_under_scenario
-from analysis import analyse, CppClass
+from .compilation import compile_under_scenario
+from ..analysis import analyse, CppClass
 
 COMPILERS = [
     "clang++",
@@ -82,7 +82,7 @@ def analyse_dwarf(dwarf_info):
                         classes[(name, class_offset)].append(parent_offset)
 
     # We now fill out the analysis object
-    analysis = DwarfAnalysis()
+    dwarf_analysis = DwarfAnalysis()
     cpp_classes = []
     for c in classes:
         cpp_class = CppClass(c[0])
@@ -92,9 +92,9 @@ def analyse_dwarf(dwarf_info):
             parent_name = [p[0] for p in classes if p[1] == i][0]
             cpp_class.inherits_from.add(parent_name)
         cpp_classes.append(cpp_class)
-    analysis.classes = cpp_classes
+    dwarf_analysis.classes = cpp_classes
 
-    return analysis
+    return dwarf_analysis
 
 
 def compare_results(elf, dwarf):
