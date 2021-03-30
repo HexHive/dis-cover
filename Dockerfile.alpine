@@ -12,7 +12,7 @@ RUN adduser -D -u $USER_ID -G dis-cover dis-cover
 # Work directory
 WORKDIR /home/dis-cover/dis-cover
 
-COPY requirements.txt .
-RUN pip install -r requirements.txt
+COPY setup.py .
+RUN pip install .
 
 USER dis-cover
