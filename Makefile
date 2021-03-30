@@ -24,7 +24,7 @@ run_scenarios_alpine: build
 
 .PHONY=clean
 clean:
-	rm -rf case-studies/outputs/* dis_cover/__pycache__ */**/__pycache__ dis_cover.egg-info
+	rm -rf case-studies/outputs/* dis_cover/__pycache__ */**/__pycache__ dis_cover.egg-info build dist
 
 .PHONY=lint
 lint: build
