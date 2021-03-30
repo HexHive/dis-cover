@@ -22,7 +22,7 @@ COPY requirements.txt .
 RUN pip install -r requirements.txt
 
 # Create a symbolic link to have access to the dis-cover command
-RUN ln -s /home/dis-cover/dis-cover/dis-cover/__main__.py /bin/dis-cover
+RUN ln -s /home/dis-cover/dis-cover/dis_cover/__main__.py /bin/dis-cover
 
 # Use the dis-cover user
 USER dis-cover

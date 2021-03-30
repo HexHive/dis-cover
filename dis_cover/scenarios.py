@@ -1,7 +1,7 @@
 from elftools.elf.elffile import ELFFile
 from elftools.dwarf.enums import ENUM_DW_TAG
-from .compilation import compile_under_scenario
-from .analysis import analyse, CppClass
+from compilation import compile_under_scenario
+from analysis import analyse, CppClass
 
 COMPILERS = [
     "clang++",

@@ -44,7 +44,8 @@ except FileNotFoundError:
 
 # Load the package's __version__.py module as a dictionary.
 about = {}
-with open(os.path.join(here, NAME, "__version__.py")) as f:
+project_slug = NAME.lower().replace("-", "_").replace(" ", "_")
+with open(os.path.join(here, project_slug, "__version__.py")) as f:
     exec(f.read(), about)
 
 
@@ -96,11 +97,11 @@ setup(
     author_email=EMAIL,
     python_requires=REQUIRES_PYTHON,
     url=URL,
-    packages=find_packages(exclude=["tests", "*.tests", "*.tests.*", "tests.*"]),
+    # packages=find_packages(exclude=["tests", "*.tests", "*.tests.*", "tests.*"]),
     # If your package is a single module, use this instead of 'packages':
-    # py_modules=[NAME],
+    py_modules=[NAME],
     entry_points={
-        "console_scripts": ["dis-cover=dis-cover.cli:main"],
+        "console_scripts": ["dis-cover=dis_cover.cli:main"],
     },
     install_requires=REQUIRED,
     extras_require=EXTRAS,

@@ -9,4 +9,4 @@ WORKDIR /home/dis-cover/dis-cover
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 
-RUN ln -s /home/dis-cover/dis-cover/dis-cover/__main__.py /bin/dis-cover
+RUN ln -s /home/dis-cover/dis-cover/dis_cover/__main__.py /bin/dis-cover
