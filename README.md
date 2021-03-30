@@ -9,9 +9,9 @@ To run the case studies, simply `make run-scenarios`. You need to have `docker` 
 
 ### Command-line
 
-You can access dis-cover by running `make shell`. You will then have access to `dis-cover`.
+You can install dis-cover by running `pip install dis-cover`.
 
-Here are the options :
+Here are the CLI options :
 
 ```
 $ dis-cover --help

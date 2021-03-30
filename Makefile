@@ -8,14 +8,7 @@ build:
 		--build-arg GROUP_ID=$(shell id -g) \
 		-f Dockerfile.alpine .
 
-.PHONY=shell
-shell: build
-	docker run --rm -v "${PWD}:/home/dis-cover/dis-cover" -it dis-cover bash
-
 .PHONY=run_scenarios
-
-# pip install dis-cover --no-index --find-links file:///home/dis-cover/dis-cover
-
 run_scenarios: build
 	docker run --rm -v "${PWD}:/home/dis-cover/dis-cover" -it dis-cover bash -c "\
 		pip install -e /home/dis-cover/dis-cover &&\
