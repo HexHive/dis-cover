@@ -1,21 +1,22 @@
 class Storable {
 public:
-  virtual void read(){};
+  virtual ~Storable() {}
+  virtual void read() {}
 };
 
 class Transmitter : public Storable {
 public:
-  virtual void read(){};
+  virtual void read() {}
 };
 
 class Receiver : public Storable {
 public:
-  virtual void read(){};
+  virtual void read() {}
 };
 
 class Radio : public Transmitter, public Receiver {
 public:
-  virtual void read(){};
+  virtual void read() {}
 };
 
 int main(int argc, char *argv[]) {

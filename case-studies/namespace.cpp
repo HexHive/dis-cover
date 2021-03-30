@@ -1,3 +1,4 @@
+namespace canvas {
 class Shape {
 public:
   virtual ~Shape() {}
@@ -8,6 +9,9 @@ class Rectangle : public Shape {
 public:
   virtual void draw() {}
 };
+} // namespace canvas
+
+using namespace canvas;
 
 int main(int argc, char *argv[]) {
   Shape *shape;

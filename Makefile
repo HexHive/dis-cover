@@ -12,15 +12,13 @@ build:
 run_scenarios: build
 	docker run --rm -v "${PWD}:/home/dis-cover/dis-cover" -it dis-cover bash -c "\
 		pip install -e /home/dis-cover/dis-cover &&\
-		~/.local/bin/dis-cover -c case-studies/simple_inheritance.cpp -o case-studies/outputs &&\
-	 	~/.local/bin/dis-cover -c case-studies/diamond_problem.cpp -o case-studies/outputs"
+		find ./case-studies/ -iname '*.cpp' -exec ~/.local/bin/dis-cover -c {} -o case-studies/outputs \;"
 
 .PHONY=run_scenarios_alpine
 run_scenarios_alpine: build
 	docker run --rm -v "${PWD}:/home/dis-cover/dis-cover" -it dis-cover-alpine bash -c "\
 		pip install -e /home/dis-cover/dis-cover &&\
-		~/.local/bin/dis-cover -c case-studies/simple_inheritance.cpp -o case-studies/outputs &&\
-		~/.local/bin/dis-cover -c case-studies/diamond_problem.cpp -o case-studies/outputs"
+		find ./case-studies/ -iname '*.cpp' -exec ~/.local/bin/dis-cover -c {} -o case-studies/outputs \;"
 
 .PHONY=clean
 clean:
