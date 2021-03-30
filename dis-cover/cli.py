@@ -1,6 +1,6 @@
 import argparse
-from analysis import analyse
-from scenarios import run_scenarios
+from .analysis import analyse
+from .scenarios import run_scenarios
 
 
 def main():
