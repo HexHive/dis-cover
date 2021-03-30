@@ -188,6 +188,11 @@ class ElfAnalysis:
         #          be the offset-to-top section, and create a Table for them.
 
         data_section = self.elffile.get_section_by_name(".data.rel.ro")
+
+        # If there is no .data.rel.ro, we cannot extract vtable information
+        if not data_section:
+            return
+
         data = data_section.data()
 
         current_address = data_section["sh_addr"]
