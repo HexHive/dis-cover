@@ -100,7 +100,7 @@ setup(
     # If your package is a single module, use this instead of 'packages':
     py_modules=[NAME],
     entry_points={
-        "console_scripts": ["dis-cover=cli:main"],
+        "console_scripts": ["dis-cover=main"],
     },
     install_requires=REQUIRED,
     extras_require=EXTRAS,
