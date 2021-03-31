@@ -207,7 +207,8 @@ class ElfAnalysis:
             if entry.is_offset_to_top():
                 self.tables.append(Table(current_address))
 
-            self.tables[-1].entries.append(entry)
+            if len(self.tables):
+                self.tables[-1].entries.append(entry)
 
             current_address += 8
 
