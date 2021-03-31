@@ -124,13 +124,11 @@ class ElfAnalysis:
 
     def get_classes(self):
         classes = []
-        vtables = filter(lambda t: t.is_vtable, self.tables)
-        for vtable in vtables:
-            cpp_class = CppClass(vtable.get_name())
-            if vtable.associated_RTTI and len(vtable.associated_RTTI.inherits_from) > 0:
-                cpp_class.inherits_from = {
-                    t.get_name() for t in vtable.associated_RTTI.inherits_from
-                }
+        rttis = filter(lambda t: t.is_RTTI, self.tables)
+        for rtti in rttis:
+            cpp_class = CppClass(rtti.get_name())
+            if len(rtti.inherits_from) > 0:
+                cpp_class.inherits_from = {t.get_name() for t in rtti.inherits_from}
             classes.append(cpp_class)
         return classes
 
