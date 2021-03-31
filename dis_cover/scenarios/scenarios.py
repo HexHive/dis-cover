@@ -16,7 +16,7 @@ OPTIONS = [
     "-Os",
     "-fno-exceptions",
     "-fno-unwind-tables",
-    "-fno-rtti",
+    # "-fno-rtti",
 ]
 
 
