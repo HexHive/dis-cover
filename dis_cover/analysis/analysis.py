@@ -1,13 +1,26 @@
+import struct
 from elftools.elf.elffile import ELFFile
 from capstone import *
 from capstone.x86_const import *
 from itanium_demangler import parse as demangle
 
 
+DATA_SECTIONS = [".rodata", ".data.rel.ro", ".data.rel.ro.local", ".rdata"]
+FUNCTION_SECTIONS = [".text", ".plt", ".extern"]
+
+
 class CppClass:
     def __init__(self, name):
         self.name = name
         self.inherits_from = set()
+        self.address = None
+
+    def __str__(self):
+        output = "class"
+        output += "\t%s" % self.name
+        if len(self.inherits_from) > 0:
+            output += "\tinherits from %s" % ", ".join(self.inherits_from)
+        return output
 
 
 class Entry:
@@ -88,6 +101,10 @@ class ElfAnalysis:
                 (section["sh_addr"] + section["sh_size"], section.name)
             )
         self.sections.sort(key=lambda i: i[0])
+        self.classes = []
+        self.names = {}
+        self.sections_data = {}
+        self.addresses = []
 
     def get_section_name(self, addr):
         if addr < 0:
@@ -97,10 +114,19 @@ class ElfAnalysis:
                 return name
         return "out of bounds"
 
+    def get_section_data_by_name(self, name):
+        if self.sections_data.get(name) == None:
+            self.sections_data[name] = self.elffile.get_section_by_name(name).data()
+        return self.sections_data[name]
+
     def extract_name(self, addr):
+        if self.names.get(addr) != None:
+            return self.names[addr]
         section_name = self.get_section_name(addr)
+        if section_name == "out of bounds":
+            return
         section = self.elffile.get_section_by_name(section_name)
-        section_data = section.data()
+        section_data = self.get_section_data_by_name(section_name)
         relative_address = addr - section["sh_addr"]
         if relative_address >= 0 and relative_address < len(section_data):
             name = "_Z"
@@ -110,7 +136,11 @@ class ElfAnalysis:
             ):
                 name += chr(section_data[relative_address])
                 relative_address += 1
-            return demangle(name)
+            self.names[addr] = str(demangle(name))
+            try:
+                return str(demangle(name))
+            except:
+                return str(name)
 
     def find_table(self, addr):
         for table in self.tables:
@@ -119,18 +149,10 @@ class ElfAnalysis:
 
     def __str__(self):
         output = "Analysis of %s\n" % self.file_name
-        vtables = filter(lambda t: t.is_vtable, self.tables)
-        return output + "\n".join([str(table) for table in vtables])
+        return output + "\n".join([str(c) for c in self.get_classes()])
 
     def get_classes(self):
-        classes = []
-        rttis = filter(lambda t: t.is_RTTI, self.tables)
-        for rtti in rttis:
-            cpp_class = CppClass(rtti.get_name())
-            if len(rtti.inherits_from) > 0:
-                cpp_class.inherits_from = {t.get_name() for t in rtti.inherits_from}
-            classes.append(cpp_class)
-        return classes
+        return self.classes
 
     def find_vfunc_calls(self):
 
@@ -236,12 +258,110 @@ class ElfAnalysis:
                     pointer_address = int(entry.value, 16)
                     table.inherits_from.append(self.find_table(pointer_address))
 
+    def extract_rtti_info(self):
+
+        self.program_map = {}
+
+        for data_section_name in DATA_SECTIONS:
+
+            data_section = self.elffile.get_section_by_name(data_section_name)
+
+            # If there is no section, we go to the next one
+            if not data_section:
+                continue
+
+            data = self.get_section_data_by_name(data_section_name)
+
+            base_address = data_section["sh_addr"]
+
+            for offset in range(0, len(data), 8):
+                line = list(data[offset : offset + 8])
+                line.reverse()
+                line_str = "".join([format(d, "02x") for d in line])
+                line_int = int(line_str, 16)
+                section = self.get_section_name(line_int)
+
+                flag = "unknown"
+
+                if section in DATA_SECTIONS:
+                    flag = "data"
+                elif section in FUNCTION_SECTIONS:
+                    flag = "function"
+                elif line_int == 0:
+                    flag = "zeroes"
+                elif line_int <= 16777216:
+                    flag = "offset_to_top"
+
+                self.program_map[base_address + offset] = (line_int, flag)
+
+        self.addresses = list(self.program_map.keys())
+        self.addresses.sort()
+
+        # Add "begin_vtable" and "begin_rtti" flags
+        # Append CppClass objects to self.classes
+        for address in self.addresses:
+            (line, flag) = self.program_map[address]
+            # First we find out if this is the beginning of a vtable
+            if flag in ["offset_to_top", "zeroes"] and address + 8 in self.addresses:
+                (next_line, next_flag) = self.program_map[address + 8]
+                # If it is, we find the associated RTTI
+                success = self.flag_rtti_recur(next_line)
+                # If we have successfuly flagged an RTTI, then at
+                # address there is a vtable
+                if success:
+                    self.program_map[address] = (line, "begin_vtable")
+
+    def flag_rtti_recur(self, address):
+        # We check that the beginning of the table is the beginning of an RTTI
+        rtti_start = self.program_map.get(address)
+        if not rtti_start:
+            return False
+        (line, flag) = rtti_start
+
+        if flag == "begin_rtti":
+            return self.extract_name(self.program_map[address + 8][0])
+
+        if flag not in ["unknown", "offset_to_top", "zeroes"]:
+            return False
+
+        # We check that the next part of the table is a name
+        name_field = self.program_map.get(address + 8)
+        if not name_field:
+            return False
+        (name_line, name_flag) = name_field
+        if name_flag != "data":
+            return False
+
+        name = self.extract_name(name_line)
+        if not name:
+            return False
+
+        cpp_class = CppClass(name)
+        cpp_class.address = address
+        self.program_map[address] = (line, "begin_rtti")
+
+        i = 2
+        while address + 8 * i in self.addresses:
+            (parent_line, parent_flag) = self.program_map[address + 8 * i]
+            i += 1
+            if parent_flag in ["zeroes", "begin_rtti", "begin_vtable"]:
+                break
+            parent_name = self.flag_rtti_recur(parent_line)
+            if not parent_name:
+                continue
+            cpp_class.inherits_from.add(parent_name)
+
+        self.classes.append(cpp_class)
+
+        return name
+
 
 def analyse(elf_file_name):
 
     analysis = ElfAnalysis(elf_file_name)
 
-    analysis.extract_vtables()
-    analysis.find_vfunc_calls()
+    # analysis.find_vfunc_calls()
+    # analysis.extract_vtables()
+    analysis.extract_rtti_info()
 
     return analysis
