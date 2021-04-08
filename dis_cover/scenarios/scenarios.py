@@ -110,7 +110,7 @@ def compare_results(elf, dwarf):
         else:
             exceptions.append(dwarf_class.name)
 
-    output = "%3.f%%" % (100 * successes / len(dwarf.get_classes()))
+    output = "%3.f%%" % (100 * successes / (len(dwarf.get_classes()) or 1))
 
     # Add some color to the output 💅
     if successes == 0:
