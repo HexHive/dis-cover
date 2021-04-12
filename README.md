@@ -1,5 +1,5 @@
 # dis-cover
-Disasemble binaries and recover as much info as possible
+Disassemble binaries and recover as much info as possible
 
 ## How to use
 
