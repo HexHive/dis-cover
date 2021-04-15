@@ -1,4 +1,6 @@
+import sys
 import argparse
+import pickle
 from ..analysis import analyse
 from ..scenarios import run_scenarios
 
@@ -14,6 +16,13 @@ def main():
         type=str,
         default="/tmp",
         help="Directory where the temporary files are written",
+    )
+    argp.add_argument(
+        "-p",
+        "--pickle",
+        action="store_true",
+        default=False,
+        help="Output info in the pickle format (used with --bin)",
     )
     # TODO Add dwarf output file
     group = argp.add_mutually_exclusive_group()
@@ -36,4 +45,8 @@ def main():
         run_scenarios(arguments.file, arguments.output_directory)
     # It's important to check this last, as it defaults to True
     elif arguments.bin:
-        print(analyse(arguments.file))
+        analysis = analyse(arguments.file)
+        if arguments.pickle:
+            sys.stdout.buffer.write(pickle.dumps(analysis.classes))
+        else:
+            print(analysis)
