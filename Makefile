@@ -28,3 +28,7 @@ clean:
 lint: build
 	docker run --rm -v "${PWD}:/home/dis-cover/dis-cover" -it dis-cover black .
 	docker run --rm -v "${PWD}:/home/dis-cover/dis-cover" -it dis-cover clang-format -i case_studies/*.cpp
+
+analyze_packages:
+	docker build -t dis-cover-analysis ./packages_analysis/
+	docker run dis-cover-analysis
