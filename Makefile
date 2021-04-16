@@ -31,4 +31,5 @@ lint: build
 
 analyze_packages:
 	docker build -t dis-cover-analysis ./packages_analysis/
-	docker run dis-cover-analysis
+	docker run dis-cover-analysis > analysis.pickle
+	python3 packages_analysis/process.py

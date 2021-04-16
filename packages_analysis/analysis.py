@@ -1,4 +1,6 @@
+import sys
 import subprocess
+import pickle
 
 UPDATE_COMMAND = "apt-get update"
 GCC_RDEPENDENCIES_COMMAND = "apt-cache rdepends libgcc1"  # Debian
@@ -7,17 +9,21 @@ DOWNLOAD_COMMAND = "apt-get download $package"
 EXTRACT_DATA_COMMAND = "ar x $package*.deb data.tar.xz"
 UNTAR_COMMAND = "tar xvf data.tar.xz"
 CLEANUP_COMMAND = "rm *.deb data.tar.xz usr/ etc/ -rf"
-DIS_COVER_COMMAND = (
-    "test -d $directory && find $directory/* -size -20M -exec dis-cover \{\} \;"
-)
+FIND_COMMAND = "test -d $directory && find $directory/* -size -10M"
+DIS_COVER_COMMAND = "dis-cover -p $filename"
 
 
 def run_command(command, shell=False):
     command = command.split() if not shell else command
     res = subprocess.run(command, capture_output=True, shell=shell)
     if res.returncode != 0:
-        raise RuntimeError(res.stderr.decode("utf-8"))
-    return res.stdout.decode("utf-8")
+        stderr = res.stderr.decode("utf-8")
+        stdout = res.stdout.decode("utf-8")
+        raise RuntimeError(stderr or stdout)
+    try:
+        return res.stdout.decode("utf-8")
+    except UnicodeDecodeError:
+        return res.stdout
 
 
 # We apt update.
@@ -27,7 +33,10 @@ run_command(UPDATE_COMMAND)
 # The first three words are the beginning of the output, not packages.
 packages = run_command(GCC_RDEPENDENCIES_COMMAND).split()[3:]
 
-for package in packages[0:10]:
+data = {}
+
+for package in packages[0:20]:
+    data[package] = {}
     download_command = DOWNLOAD_COMMAND.replace("$package", package)
     run_command(download_command)
 
@@ -36,18 +45,20 @@ for package in packages[0:10]:
 
     run_command(UNTAR_COMMAND)
 
-    print(package)
+    files = []
 
-    out = ""
     for directory in ["usr/bin", "usr/sbin", "usr/lib/*"]:
-        analysis_command = DIS_COVER_COMMAND.replace("$directory", directory)
+        find_command = FIND_COMMAND.replace("$directory", directory)
         try:
-            out += run_command(analysis_command, shell=True)
-        except RuntimeError as err:
-            print(err)
+            files += run_command(find_command, shell=True).split()
+        except RuntimeError:
+            pass
 
-    print(out)
-    print("===================================================", flush=True)
+    for filename in files:
+        dis_cover_command = DIS_COVER_COMMAND.replace("$filename", filename)
+        data[package][filename] = pickle.loads(run_command(dis_cover_command))
 
     remove_command = CLEANUP_COMMAND.replace("$package", package)
     run_command(remove_command, shell=True)
+
+sys.stdout.buffer.write(pickle.dumps(data))
