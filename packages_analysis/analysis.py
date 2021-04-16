@@ -14,6 +14,9 @@ FIND_COMMAND = "test -d $package/$directory && find $package/$directory/* -size 
 DIS_COVER_COMMAND = "dis-cover -p $filename"
 
 
+data = {}
+
+
 def run_command(command, shell=False):
     command = command.split() if not shell else command
     res = subprocess.run(command, capture_output=True, shell=shell)
@@ -28,7 +31,7 @@ def run_command(command, shell=False):
 
 
 def analyze_package(package):
-    data[package] = {}
+    data = {}
     download_command = DOWNLOAD_COMMAND.replace("$package", package)
     run_command(download_command)
 
@@ -50,12 +53,13 @@ def analyze_package(package):
     for filename in files:
         dis_cover_command = DIS_COVER_COMMAND.replace("$filename", filename)
         try:
-            data[package][filename] = pickle.loads(run_command(dis_cover_command))
+            data[filename] = pickle.loads(run_command(dis_cover_command))
         except RuntimeError:
             pass
 
     remove_command = CLEANUP_COMMAND.replace("$package", package)
     run_command(remove_command, shell=True)
+    return data
 
 
 if __name__ == "__main__":
@@ -64,10 +68,8 @@ if __name__ == "__main__":
 
     # We get the list of packages to analyze.
     # The first three words are the beginning of the output, not packages.
-    packages = run_command(GCC_RDEPENDENCIES_COMMAND).split()[3:]
+    packages = run_command(GCC_RDEPENDENCIES_COMMAND).split()[3:][0:2]
 
-    data = {}
-
-    Pool().map(analyze_package, packages[0:10])
+    data = dict(zip(packages, Pool().map(analyze_package, packages)))
 
     sys.stdout.buffer.write(pickle.dumps(data))
