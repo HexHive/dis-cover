@@ -56,7 +56,10 @@ for package in packages[0:20]:
 
     for filename in files:
         dis_cover_command = DIS_COVER_COMMAND.replace("$filename", filename)
-        data[package][filename] = pickle.loads(run_command(dis_cover_command))
+        try:
+            data[package][filename] = pickle.loads(run_command(dis_cover_command))
+        except RuntimeError:
+            pass
 
     remove_command = CLEANUP_COMMAND.replace("$package", package)
     run_command(remove_command, shell=True)
