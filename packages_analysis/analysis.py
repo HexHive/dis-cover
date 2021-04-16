@@ -7,10 +7,10 @@ UPDATE_COMMAND = "apt-get update"
 GCC_RDEPENDENCIES_COMMAND = "apt-cache rdepends libgcc1"  # Debian
 # GCC_RDEPENDENCIES_COMMAND = "apt-cache rdepends libgcc-s1" # Ubuntu
 DOWNLOAD_COMMAND = "apt-get download $package"
-EXTRACT_DATA_COMMAND = "ar x $package*.deb data.tar.xz"
-UNTAR_COMMAND = "tar xvf data.tar.xz"
+EXTRACT_DATA_COMMAND = "mkdir $package && cd $package && ar x ../$package*.deb data.tar.xz"
+UNTAR_COMMAND = "tar xvf $package/data.tar.xz --directory $package"
 CLEANUP_COMMAND = "rm $package* -rf"
-FIND_COMMAND = "test -d $directory && find $directory/* -size -5M"
+FIND_COMMAND = "test -d $package/$directory && find $package/$directory/* -size -2M"
 DIS_COVER_COMMAND = "dis-cover -p $filename"
 
 
@@ -35,12 +35,13 @@ def analyze_package(package):
     extract_command = EXTRACT_DATA_COMMAND.replace("$package", package)
     run_command(extract_command, shell=True)
 
-    run_command(UNTAR_COMMAND)
+    untar_command = UNTAR_COMMAND.replace("$package", package)
+    run_command(untar_command)
 
     files = []
 
     for directory in ["usr/bin", "usr/sbin", "usr/lib/*"]:
-        find_command = FIND_COMMAND.replace("$directory", directory)
+        find_command = FIND_COMMAND.replace("$directory", directory).replace("$package", package)
         try:
             files += run_command(find_command, shell=True).split()
         except RuntimeError:
