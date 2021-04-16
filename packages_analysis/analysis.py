@@ -1,6 +1,7 @@
 import sys
 import subprocess
 import pickle
+from multiprocessing import Pool
 
 UPDATE_COMMAND = "apt-get update"
 GCC_RDEPENDENCIES_COMMAND = "apt-cache rdepends libgcc1"  # Debian
@@ -8,8 +9,8 @@ GCC_RDEPENDENCIES_COMMAND = "apt-cache rdepends libgcc1"  # Debian
 DOWNLOAD_COMMAND = "apt-get download $package"
 EXTRACT_DATA_COMMAND = "ar x $package*.deb data.tar.xz"
 UNTAR_COMMAND = "tar xvf data.tar.xz"
-CLEANUP_COMMAND = "rm *.deb data.tar.xz usr/ etc/ -rf"
-FIND_COMMAND = "test -d $directory && find $directory/* -size -10M"
+CLEANUP_COMMAND = "rm $package* -rf"
+FIND_COMMAND = "test -d $directory && find $directory/* -size -5M"
 DIS_COVER_COMMAND = "dis-cover -p $filename"
 
 
@@ -26,16 +27,7 @@ def run_command(command, shell=False):
         return res.stdout
 
 
-# We apt update.
-run_command(UPDATE_COMMAND)
-
-# We get the list of packages to analyze.
-# The first three words are the beginning of the output, not packages.
-packages = run_command(GCC_RDEPENDENCIES_COMMAND).split()[3:]
-
-data = {}
-
-for package in packages[0:20]:
+def analyze_package(package):
     data[package] = {}
     download_command = DOWNLOAD_COMMAND.replace("$package", package)
     run_command(download_command)
@@ -64,4 +56,17 @@ for package in packages[0:20]:
     remove_command = CLEANUP_COMMAND.replace("$package", package)
     run_command(remove_command, shell=True)
 
-sys.stdout.buffer.write(pickle.dumps(data))
+
+if __name__ == "__main__":
+    # We apt update.
+    run_command(UPDATE_COMMAND)
+
+    # We get the list of packages to analyze.
+    # The first three words are the beginning of the output, not packages.
+    packages = run_command(GCC_RDEPENDENCIES_COMMAND).split()[3:]
+
+    data = {}
+
+    Pool().map(analyze_package, packages[0:10])
+
+    sys.stdout.buffer.write(pickle.dumps(data))
