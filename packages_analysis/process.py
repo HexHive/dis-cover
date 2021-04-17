@@ -9,8 +9,12 @@ packages_where_class = 0
 print("Number of packages", len(data))
 
 for package in data:
+    files = data[package]
+    print(package, files)
     classes = 0
-    for file in package:
+    for file in files:
+        if file == "failed":
+            continue
         classes += len(file)
         total_classes += len(file)
     max_classes = classes if classes > max_classes else max_classes
@@ -19,4 +23,7 @@ for package in data:
 
 print("Max number of classes in a package", max_classes)
 print("Total number of classes", total_classes)
-print("Mean number of classes when there are classes", total_classes / packages_where_class)
+print(
+    "Mean number of classes when there are classes",
+    total_classes / (packages_where_class or 1),
+)

@@ -7,7 +7,9 @@ UPDATE_COMMAND = "apt-get update"
 GCC_RDEPENDENCIES_COMMAND = "apt-cache rdepends libgcc1"  # Debian
 # GCC_RDEPENDENCIES_COMMAND = "apt-cache rdepends libgcc-s1" # Ubuntu
 DOWNLOAD_COMMAND = "apt-get download $package"
-EXTRACT_DATA_COMMAND = "mkdir $package && cd $package && ar x ../$package*.deb data.tar.xz"
+EXTRACT_DATA_COMMAND = (
+    "mkdir $package && cd $package && ar x ../$package*.deb data.tar.xz"
+)
 UNTAR_COMMAND = "tar xvf $package/data.tar.xz --directory $package"
 CLEANUP_COMMAND = "rm $package* -rf"
 FIND_COMMAND = "test -d $package/$directory && find $package/$directory/* -size -2M"
@@ -32,19 +34,24 @@ def run_command(command, shell=False):
 
 def analyze_package(package):
     data = {}
-    download_command = DOWNLOAD_COMMAND.replace("$package", package)
-    run_command(download_command)
+    try:
+        download_command = DOWNLOAD_COMMAND.replace("$package", package)
+        run_command(download_command)
 
-    extract_command = EXTRACT_DATA_COMMAND.replace("$package", package)
-    run_command(extract_command, shell=True)
+        extract_command = EXTRACT_DATA_COMMAND.replace("$package", package)
+        run_command(extract_command, shell=True)
 
-    untar_command = UNTAR_COMMAND.replace("$package", package)
-    run_command(untar_command)
+        untar_command = UNTAR_COMMAND.replace("$package", package)
+        run_command(untar_command)
+    except:
+        return {"failed": True}
 
     files = []
 
     for directory in ["usr/bin", "usr/sbin", "usr/lib/*"]:
-        find_command = FIND_COMMAND.replace("$directory", directory).replace("$package", package)
+        find_command = FIND_COMMAND.replace("$directory", directory).replace(
+            "$package", package
+        )
         try:
             files += run_command(find_command, shell=True).split()
         except RuntimeError:
@@ -69,6 +76,7 @@ if __name__ == "__main__":
     # We get the list of packages to analyze.
     # The first three words are the beginning of the output, not packages.
     packages = run_command(GCC_RDEPENDENCIES_COMMAND).split()[3:][0:2]
+    packages = ["hamfax", "between"]
 
     data = dict(zip(packages, Pool().map(analyze_package, packages)))
 
