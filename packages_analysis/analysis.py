@@ -12,7 +12,7 @@ EXTRACT_DATA_COMMAND = (
 )
 UNTAR_COMMAND = "tar xvf $package/data.tar.xz --directory $package"
 CLEANUP_COMMAND = "rm $package* -rf"
-FIND_COMMAND = "test -d $package/$directory && find $package/$directory/* -size -2M"
+FIND_COMMAND = "test -d $package/$directory && find $package/$directory/* -size" # -2M"
 DIS_COVER_COMMAND = "dis-cover -p $filename"
 
 
@@ -44,6 +44,8 @@ def analyze_package(package):
         untar_command = UNTAR_COMMAND.replace("$package", package)
         run_command(untar_command)
     except:
+        remove_command = CLEANUP_COMMAND.replace("$package", package)
+        run_command(remove_command, shell=True)
         return {"failed": True}
 
     files = []
@@ -75,8 +77,7 @@ if __name__ == "__main__":
 
     # We get the list of packages to analyze.
     # The first three words are the beginning of the output, not packages.
-    packages = run_command(GCC_RDEPENDENCIES_COMMAND).split()[3:][0:2]
-    packages = ["hamfax", "between"]
+    packages = run_command(GCC_RDEPENDENCIES_COMMAND).split()[3:]
 
     data = dict(zip(packages, Pool().map(analyze_package, packages)))
 
