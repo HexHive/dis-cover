@@ -12,7 +12,7 @@ EXTRACT_DATA_COMMAND = (
 )
 UNTAR_COMMAND = "tar xvf $package/data.tar.xz --directory $package"
 CLEANUP_COMMAND = "rm $package* -rf"
-FIND_COMMAND = "test -d $package/$directory && find $package/$directory/* -size" # -2M"
+FIND_COMMAND = "test -d $package/$directory && find $package/$directory/*" # -size -2M"
 DIS_COVER_COMMAND = "dis-cover -p $filename"
 
 
