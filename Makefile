@@ -33,3 +33,7 @@ analyze_packages:
 	docker build -t dis-cover-analysis ./packages_analysis/
 	docker run dis-cover-analysis > analysis.pickle
 	python3 packages_analysis/process.py
+
+jupyter-notebook:
+	docker build -t dis-cover-notebook -f ./packages_analysis/Dockerfile.notebook ./packages_analysis/
+	docker run -p 8888:8888 -v ${PWD}/packages_analysis:/home/jovyan/work dis-cover-notebook
