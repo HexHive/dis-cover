@@ -22,6 +22,16 @@ class CppClass:
             output += "\tinherits from %s" % ", ".join(self.inherits_from)
         return output
 
+    def __hash__(self):
+        return hash(
+            str(hash(self.name)) +
+            str(hash("".join(sorted([
+                str(hash(c)) for c in self.inherits_from
+            ]))))
+        )
+
+    def __eq__(self, other):
+        return hash(self) == hash(other)
 
 class Entry:
     """A table entry"""
