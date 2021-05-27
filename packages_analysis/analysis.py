@@ -8,11 +8,9 @@ UPDATE_COMMAND = "apt-get update"
 GCC_RDEPENDENCIES_COMMAND = "apt-cache rdepends libgcc1"  # Debian
 # GCC_RDEPENDENCIES_COMMAND = "apt-cache rdepends libgcc-s1" # Ubuntu
 DOWNLOAD_COMMAND = "mkdir $dir && cd $dir && apt-get download $package"
-EXTRACT_DATA_COMMAND = (
-    "cd $dir && ar x *.deb data.tar.xz data.tar.gz && rm *.deb"
-)
+EXTRACT_DATA_COMMAND = "cd $dir && ar x *.deb data.tar.xz data.tar.gz && rm *.deb"
 UNTAR_COMMAND = "tar xvf $dir/data.tar.* --directory $dir && rm $dir/data.tar.*"
-FIND_COMMAND = "test -d $dir/$subpath && find $dir/$subpath" # -size -2M"
+FIND_COMMAND = "test -d $dir/$subpath && find $dir/$subpath"  # -size -2M"
 DIS_COVER_COMMAND = "dis-cover -p $filename"
 CLEANUP_COMMAND = "rm $dir -rf"
 
@@ -38,7 +36,9 @@ def analyze_package(package):
     dir_name = str(uuid.uuid4())
 
     try:
-        download_command = DOWNLOAD_COMMAND.replace("$package", package).replace("$dir", dir_name)
+        download_command = DOWNLOAD_COMMAND.replace("$package", package).replace(
+            "$dir", dir_name
+        )
         run_command(download_command, shell=True)
 
         extract_command = EXTRACT_DATA_COMMAND.replace("$dir", dir_name)
@@ -54,14 +54,14 @@ def analyze_package(package):
     files = []
 
     for directory in ["usr/bin", "usr/sbin", "usr/lib", "usr/games"]:
-        find_command = FIND_COMMAND \
-            .replace("$subpath", directory) \
-            .replace("$dir", dir_name)
+        find_command = FIND_COMMAND.replace("$subpath", directory).replace(
+            "$dir", dir_name
+        )
         try:
             files += run_command(find_command, shell=True).split()
         except RuntimeError:
             pass
-    
+
     if len(files) == 0:
         remove_command = CLEANUP_COMMAND.replace("$dir", dir_name)
         run_command(remove_command, shell=True)

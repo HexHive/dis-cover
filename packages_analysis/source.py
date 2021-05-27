@@ -4,7 +4,7 @@ import pickle
 import uuid
 from multiprocessing import Pool
 
-ADD_SOURCE_LIST = "echo \"deb-src http://http.us.debian.org/debian unstable main\" >> /etc/apt/sources.list"
+ADD_SOURCE_LIST = 'echo "deb-src http://http.us.debian.org/debian unstable main" >> /etc/apt/sources.list'
 UPDATE_COMMAND = "apt-get update"
 GCC_RDEPENDENCIES_COMMAND = "apt-cache rdepends libgcc1"  # Debian
 # GCC_RDEPENDENCIES_COMMAND = "apt-cache rdepends libgcc-s1" # Ubuntu
@@ -34,7 +34,9 @@ def analyze_package(package):
     dir_name = str(uuid.uuid4())
 
     try:
-        download_command = DOWNLOAD_COMMAND.replace("$package", package).replace("$dir", dir_name)
+        download_command = DOWNLOAD_COMMAND.replace("$package", package).replace(
+            "$dir", dir_name
+        )
         run_command(download_command, shell=True)
     except:
         remove_command = CLEANUP_COMMAND.replace("$dir", dir_name)
@@ -47,7 +49,7 @@ def analyze_package(package):
         data = run_command(grep_command, shell=True).split()
     except:
         pass
-    
+
     remove_command = CLEANUP_COMMAND.replace("$dir", dir_name)
     run_command(remove_command, shell=True)
     return data
