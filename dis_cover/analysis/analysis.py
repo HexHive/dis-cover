@@ -348,7 +348,7 @@ class ElfAnalysis:
             return False, None
 
         name = self.extract_name(name_line)
-        if not name:
+        if not name or name == "None":
             return False, None
 
         cpp_class = CppClass(name)
