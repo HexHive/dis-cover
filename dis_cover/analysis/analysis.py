@@ -24,14 +24,13 @@ class CppClass:
 
     def __hash__(self):
         return hash(
-            str(hash(self.name)) +
-            str(hash("".join(sorted([
-                str(hash(c)) for c in self.inherits_from
-            ]))))
+            str(hash(self.name))
+            + str(hash("".join(sorted([str(hash(c)) for c in self.inherits_from]))))
         )
 
     def __eq__(self, other):
         return hash(self) == hash(other)
+
 
 class Entry:
     """A table entry"""
@@ -315,7 +314,9 @@ class ElfAnalysis:
             if flag in ["offset_to_top", "zeroes"] and address + 8 in self.addresses:
                 (next_line, next_flag) = self.program_map[address + 8]
                 # If it is, we find the associated RTTI
-                success = self.flag_rtti_recur(next_line)
+                success, cpp_class = self.flag_rtti_recur(next_line)
+                if cpp_class:
+                    cpp_class.vtable_address = address
                 # If we have successfuly flagged an RTTI, then at
                 # address there is a vtable
                 if success:
@@ -325,26 +326,30 @@ class ElfAnalysis:
         # We check that the beginning of the table is the beginning of an RTTI
         rtti_start = self.program_map.get(address)
         if not rtti_start:
-            return False
+            return False, None
         (line, flag) = rtti_start
 
         if flag == "begin_rtti":
-            return self.extract_name(self.program_map[address + 8][0])
+            name = self.extract_name(self.program_map[address + 8][0])
+            for cpp_class in self.classes:
+                if cpp_class.name == name:
+                    return name, cpp_class
+            return name, None
 
         if flag not in ["unknown", "offset_to_top", "zeroes"]:
-            return False
+            return False, None
 
         # We check that the next part of the table is a name
         name_field = self.program_map.get(address + 8)
         if not name_field:
-            return False
+            return False, None
         (name_line, name_flag) = name_field
         if name_flag != "data":
-            return False
+            return False, None
 
         name = self.extract_name(name_line)
         if not name:
-            return False
+            return False, None
 
         cpp_class = CppClass(name)
         cpp_class.address = address
@@ -356,14 +361,14 @@ class ElfAnalysis:
             i += 1
             if parent_flag in ["zeroes", "begin_rtti", "begin_vtable"]:
                 break
-            parent_name = self.flag_rtti_recur(parent_line)
+            parent_name, _ = self.flag_rtti_recur(parent_line)
             if not parent_name:
                 continue
             cpp_class.inherits_from.add(parent_name)
 
         self.classes.append(cpp_class)
 
-        return name
+        return name, cpp_class
 
 
 def analyse(elf_file_name):

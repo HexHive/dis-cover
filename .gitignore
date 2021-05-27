@@ -1,6 +1,7 @@
 # Outputs
 case_studies/outputs/*
 *.pickle
+reconstructed
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
