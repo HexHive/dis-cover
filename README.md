@@ -18,7 +18,7 @@ Then, you can run it to analyze your binary, for example `/bin/gold`.
 dis-cover /bin/gold
 ```
 
-This will create a `reconstructed` elf file in your directory. This binary will contain symbols and dwarf information describing the classes and hierarchies that dis-cover was able to find.
+This will create a `reconstructed` elf file in your current directory. This binary will contain symbols and dwarf information describing the classes and hierarchies that dis-cover was able to find.
 
 ### Run the case studies
 
