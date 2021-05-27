@@ -50,8 +50,6 @@ optional arguments:
   -c, --cpp             Compile C++ file under multiple scenarios and extract info from the given outputs
 ```
 
-`dis-cover` is in early development, it will probably not work yet on your own binaries.
-
 ## Still TODO
 
 - Check if objcopy and eu-unstrip exist before using them (priority: medium)
