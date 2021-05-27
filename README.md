@@ -15,7 +15,7 @@ Here are the CLI options :
 
 ```
 $ dis-cover --help
-usage: dis-cover [-h] [-o OUTPUT_DIRECTORY] [-p] [-b | -c] file
+usage: dis-cover [-h] [-d OUTPUT_DIRECTORY] [-p] [-o OUTPUT_FILE] [-b | -c] file
 
 Disasemble binaries and recover as much info as possible
 
@@ -24,9 +24,11 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  -o OUTPUT_DIRECTORY, --output-directory OUTPUT_DIRECTORY
-                        Directory where the temporary files are written
+  -d OUTPUT_DIRECTORY, --output-directory OUTPUT_DIRECTORY
+                        Directory where the temporary files are written (used with --cpp)
   -p, --pickle          Output info in the pickle format (used with --bin)
+  -o OUTPUT_FILE, --output-file OUTPUT_FILE
+                        File where the output should be written (used with --bin)
   -b, --bin             Extract info from a binary file (default)
   -c, --cpp             Compile C++ file under multiple scenarios and extract info from the given outputs
 ```
