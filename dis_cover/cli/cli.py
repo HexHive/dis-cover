@@ -17,7 +17,7 @@ def main():
         "--output-directory",
         type=str,
         default="/tmp",
-        help="Directory where the temporary files are written (used with --cpp)",
+        help="Directory where the temporary files are written",
     )
     argp.add_argument(
         "-p",
@@ -61,19 +61,24 @@ def main():
             print(analysis)
             reconstruction = reconstruct(analysis)
             print("Writing to %s" % arguments.file + "_reconstructed")
-            output_file = open(arguments.file + "_reconstructed", "wb")
-            output_file.write(reconstruction)
-            output_file.close()
+            file_name = arguments.file.split("/")[-1]
+            reconstructed_file_path = arguments.output_directory + "/" + file_name + "_reconstructed"
+            reconstructed_file = open(reconstructed_file_path, "wb")
+            reconstructed_file.write(reconstruction)
+            reconstructed_file.close()
             print("Stripping original file")
+            stripped_file_path = arguments.output_directory + "/" + file_name + "_stripped"
+            # TODO check the return values
             strip = subprocess.run(
-                ["objcopy", "--strip-all", arguments.file, arguments.file + "_stripped"]
+                ["objcopy", "--strip-all", arguments.file, stripped_file_path]
             )
             print("Combining reconstructed and stripped files")
+            # TODO check the return values
             unstrip = subprocess.run(
                 [
                     "eu-unstrip",
-                    arguments.file + "_stripped",
-                    arguments.file + "_reconstructed",
+                    stripped_file_path,
+                    reconstructed_file_path,
                     "-o",
                     arguments.output_file,
                 ]

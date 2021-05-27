@@ -7,16 +7,6 @@ SECTIONS_TO_KEEP = [
     ".dynsym",
 ]
 
-# SET TO 0 & SHT_NOBIT
-SECTIONS_TO_ZERO = [
-    ".interp",
-    ".rela.dyn",
-    ".rela.plt",
-    ".eh_frame",
-    ".bss",
-    ".data",
-]
-
 SECTIONS_TO_CREATE = [
     ".debug_info",  # main dwarf info
     ".debug_abbrev",  # dwarf type definition
@@ -143,18 +133,14 @@ class Reconstruction:
 
             self.e_shnum += 1
 
-            # All of the sections we set to zero
-            if section.name in SECTIONS_TO_ZERO:
-                # TODO set SHT_NOBITS flag
-                section_data += bytes(section.header["sh_size"])
-                section_header += self.create_section_header(section.header)
             # All of the sections we keep as is
-            elif section.name in SECTIONS_TO_KEEP:
+            if section.name in SECTIONS_TO_KEEP:
                 section_data += section.data()
                 section_header += self.create_section_header(section.header)
             # The other sections (we squash them)
             else:
                 # TODO set SHT_NOBITS flag
+                section_data += bytes(section.header["sh_size"])
                 section_header += self.create_section_header(section.header)
 
             # We add the name to the shstrtab section
@@ -333,57 +319,56 @@ class Reconstruction:
         symtab += b"\x00" * 24
         strtab += b"\x00"
 
-        for symbol in symtab_section.iter_symbols():
-            n += 1
-            skip_symbol = False
+        if symtab_section:
+            for symbol in symtab_section.iter_symbols():
+                n += 1
+                skip_symbol = False
 
-            # We check if the type of the table is "STT_SECTION"
-            if symbol["st_info"]["type"] == "STT_SECTION":
-                continue
-
-            # We check if the symbol corresponds to a class we have discovered
-            for cpp_class in self.classes:
-                name = cpp_class.name
-                rtti_name = "_ZTI" + mangle(name)
-                vtable_name = "_ZTV" + mangle(name)
-                # If it is, we skip it to add it later
-                if symbol.name in [rtti_name, vtable_name]:
-                    skip_symbol = True
-                    break
-
-            if skip_symbol:
-                continue
-
-            entry_offset = (
-                symtab_section["sh_offset"] + n * symtab_section["sh_entsize"]
-            )
-            symtab_section.stream.seek(entry_offset)
-            symbol_value = symtab_section.stream.read(symtab_section["sh_entsize"])
-
-            # We do not include the symbol if it is null
-            if symbol_value == b"\x00" * symtab_section["sh_entsize"]:
-                continue
-
-            # We find the id of the section pointed to by the symbol
-            st_shndx = symbol["st_shndx"]
-            if isinstance(st_shndx, int):
-                section_name = self.elffile.get_section(st_shndx).name
-                try:
-                    new_st_shndx = self.sections_list.index(section_name)
-                except:
+                # We check if the type of the table is "STT_SECTION"
+                if symbol["st_info"]["type"] == "STT_SECTION":
                     continue
 
-                # Now we can create the symbol with new st_name and st_shndx
-                symtab += int_to_bytes(len(strtab), width=4)  # st_name
-                symtab += symbol_value[4:6]  # st_info, st_other
-                symtab += int_to_bytes(new_st_shndx, width=2)  # st_shndx
-                symtab += symbol_value[8:]  # st_value, st_size
+                # We check if the symbol corresponds to a class we have discovered
+                for cpp_class in self.classes:
+                    name = cpp_class.name
+                    rtti_name = "_ZTI" + mangle(name)
+                    vtable_name = "_ZTV" + mangle(name)
+                    # If it is, we skip it to add it later
+                    if symbol.name in [rtti_name, vtable_name]:
+                        skip_symbol = True
+                        break
 
-                strtab += symbol.name.encode() + b"\x00"
+                if skip_symbol:
+                    continue
+
+                entry_offset = (
+                    symtab_section["sh_offset"] + n * symtab_section["sh_entsize"]
+                )
+                symtab_section.stream.seek(entry_offset)
+                symbol_value = symtab_section.stream.read(symtab_section["sh_entsize"])
+
+                # We do not include the symbol if it is null
+                if symbol_value == b"\x00" * symtab_section["sh_entsize"]:
+                    continue
+
+                # We find the id of the section pointed to by the symbol
+                st_shndx = symbol["st_shndx"]
+                if isinstance(st_shndx, int):
+                    section_name = self.elffile.get_section(st_shndx).name
+                    try:
+                        new_st_shndx = self.sections_list.index(section_name)
+                    except:
+                        continue
+
+                    # Now we can create the symbol with new st_name and st_shndx
+                    symtab += int_to_bytes(len(strtab), width=4)  # st_name
+                    symtab += symbol_value[4:6]  # st_info, st_other
+                    symtab += int_to_bytes(new_st_shndx, width=2)  # st_shndx
+                    symtab += symbol_value[8:]  # st_value, st_size
+
+                    strtab += symbol.name.encode() + b"\x00"
 
         for c in self.classes:
-            sym = symtab_section.get_symbol_by_name("_ZTI" + mangle(c.name))[0]
-
             symtab += int_to_bytes(len(strtab), width=4)  # st_name
             symtab += b"\x21"  # st_info
             symtab += b"\x00"  # st_other

@@ -25,7 +25,7 @@ positional arguments:
 optional arguments:
   -h, --help            show this help message and exit
   -d OUTPUT_DIRECTORY, --output-directory OUTPUT_DIRECTORY
-                        Directory where the temporary files are written (used with --cpp)
+                        Directory where the temporary files are written
   -p, --pickle          Output info in the pickle format (used with --bin)
   -o OUTPUT_FILE, --output-file OUTPUT_FILE
                         File where the output should be written (used with --bin)
