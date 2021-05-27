@@ -4,8 +4,9 @@ RUN apt-get update \
  && DEBIAN_FRONTEND=noninteractive apt-get install -y \
     binutils \
     xz-utils \
+    dpkg-dev \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 RUN pip install dis-cover
-COPY analysis.py .
-CMD ["python", "analysis.py"]
+COPY source.py .
+CMD ["python", "source.py"]
