@@ -42,10 +42,10 @@ positional arguments:
 optional arguments:
   -h, --help            show this help message and exit
   -d OUTPUT_DIRECTORY, --output-directory OUTPUT_DIRECTORY
-                        Directory where the temporary files are written
+                        Directory where the temporary files are written (default "/tmp")
   -p, --pickle          Output info in the pickle format (used with --bin)
   -o OUTPUT_FILE, --output-file OUTPUT_FILE
-                        File where the output should be written (used with --bin)
+                        File where the output should be written (used with --bin) (default "./reconstructed")
   -b, --bin             Extract info from a binary file (default)
   -c, --cpp             Compile C++ file under multiple scenarios and extract info from the given outputs
 ```
