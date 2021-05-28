@@ -17,7 +17,7 @@ def main():
         "--output-directory",
         type=str,
         default="/tmp",
-        help="Directory where the temporary files are written",
+        help="Directory where the temporary files are written (default \"/tmp\")",
     )
     argp.add_argument(
         "-p",
@@ -30,8 +30,8 @@ def main():
         "-o",
         "--output-file",
         type=str,
-        default="reconstructed",
-        help="File where the output should be written (used with --bin)",
+        default="./reconstructed",
+        help="File where the output should be written (used with --bin) (default \"./reconstructed\")",
     )
     # TODO Add dwarf output file
     group = argp.add_mutually_exclusive_group()
