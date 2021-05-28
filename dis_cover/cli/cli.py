@@ -66,14 +66,16 @@ def main():
             reconstructed_file = open(reconstructed_file_path, "wb")
             reconstructed_file.write(reconstruction)
             reconstructed_file.close()
+            if not check_for_command("objcopy"):
+                return
             print("Stripping original file")
             stripped_file_path = arguments.output_directory + "/" + file_name + "_stripped"
-            # TODO check the return values
             strip = subprocess.run(
                 ["objcopy", "--strip-all", arguments.file, stripped_file_path]
             )
+            if not check_for_command("eu-unstrip"):
+                return
             print("Combining reconstructed and stripped files")
-            # TODO check the return values
             unstrip = subprocess.run(
                 [
                     "eu-unstrip",
@@ -83,3 +85,12 @@ def main():
                     arguments.output_file,
                 ]
             )
+
+# Check if command exists on the system
+def check_for_command(command):
+    c = subprocess.run("command -v " + command, shell=True, capture_output=True)
+    if c.returncode == 0:
+        return 1
+    else:
+        print(command + " is needed to continue with the process")
+        return 0
