@@ -17,7 +17,7 @@ def main():
         "--output-directory",
         type=str,
         default="/tmp",
-        help="Directory where the temporary files are written (default \"/tmp\")",
+        help='Directory where the temporary files are written (default "/tmp")',
     )
     argp.add_argument(
         "-p",
@@ -31,7 +31,7 @@ def main():
         "--output-file",
         type=str,
         default="./reconstructed",
-        help="File where the output should be written (used with --bin) (default \"./reconstructed\")",
+        help='File where the output should be written (used with --bin) (default "./reconstructed")',
     )
     # TODO Add dwarf output file
     group = argp.add_mutually_exclusive_group()
@@ -62,14 +62,18 @@ def main():
             reconstruction = reconstruct(analysis)
             print("Writing to %s" % arguments.file + "_reconstructed")
             file_name = arguments.file.split("/")[-1]
-            reconstructed_file_path = arguments.output_directory + "/" + file_name + "_reconstructed"
+            reconstructed_file_path = (
+                arguments.output_directory + "/" + file_name + "_reconstructed"
+            )
             reconstructed_file = open(reconstructed_file_path, "wb")
             reconstructed_file.write(reconstruction)
             reconstructed_file.close()
             if not check_for_command("objcopy"):
                 return
             print("Stripping original file")
-            stripped_file_path = arguments.output_directory + "/" + file_name + "_stripped"
+            stripped_file_path = (
+                arguments.output_directory + "/" + file_name + "_stripped"
+            )
             strip = subprocess.run(
                 ["objcopy", "--strip-all", arguments.file, stripped_file_path]
             )
@@ -85,6 +89,7 @@ def main():
                     arguments.output_file,
                 ]
             )
+
 
 # Check if command exists on the system
 def check_for_command(command):
