@@ -55,6 +55,5 @@ optional arguments:
 - Verify objcopy and eu-unstrip outputs (priority: medium)
 - Add better error handling and more helpful messages (priority: medium)
 - Set NOBIT flag in the section headers (priority: low)
-- Add -l option for listing classes, just prints a number by default (priority: low)
 - Remodel output to be more understandable (priority: low)
 - Find a way to compute the size of the classes (priority: low)
