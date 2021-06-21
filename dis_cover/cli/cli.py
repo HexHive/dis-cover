@@ -33,7 +33,13 @@ def main():
         default="./reconstructed",
         help='File where the output should be written (used with --bin) (default "./reconstructed")',
     )
-    # TODO Add dwarf output file
+    argp.add_argument(
+        "-l",
+        "--list-classes",
+        action="store_true",
+        default=False,
+        help="List the classes found in the binary (used with --bin)",
+    )
     group = argp.add_mutually_exclusive_group()
     group.add_argument(
         "-b",
@@ -58,28 +64,32 @@ def main():
         if arguments.pickle:
             sys.stdout.buffer.write(pickle.dumps(analysis.classes))
         else:
-            print(analysis)
+            if arguments.list_classes:
+                print(analysis)
             reconstruction = reconstruct(analysis)
-            print("Writing to %s" % arguments.file + "_reconstructed")
             file_name = arguments.file.split("/")[-1]
             reconstructed_file_path = (
                 arguments.output_directory + "/" + file_name + "_reconstructed"
             )
+            print("🔧 Writing reconstructed ELF to %s" % reconstructed_file_path)
             reconstructed_file = open(reconstructed_file_path, "wb")
             reconstructed_file.write(reconstruction)
             reconstructed_file.close()
             if not check_for_command("objcopy"):
                 return
-            print("Stripping original file")
             stripped_file_path = (
                 arguments.output_directory + "/" + file_name + "_stripped"
             )
+            print("✂️  Stripping original ELF to %s" % stripped_file_path)
             strip = subprocess.run(
                 ["objcopy", "--strip-all", arguments.file, stripped_file_path]
             )
             if not check_for_command("eu-unstrip"):
                 return
-            print("Combining reconstructed and stripped files")
+            print(
+                "🪢  Combining reconstructed and stripped ELFs to %s"
+                % arguments.output_file
+            )
             unstrip = subprocess.run(
                 [
                     "eu-unstrip",
