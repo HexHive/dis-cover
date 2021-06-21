@@ -66,6 +66,11 @@ def main():
         else:
             if arguments.list_classes:
                 print(analysis)
+            else:
+                print(
+                    "🏗️  Analysis has found %d classes in %s"
+                    % (len(analysis.get_classes()), arguments.file)
+                )
             reconstruction = reconstruct(analysis)
             file_name = arguments.file.split("/")[-1]
             reconstructed_file_path = (
