@@ -31,8 +31,7 @@ You can install dis-cover by running `pip install dis-cover`.
 Here are the CLI options :
 
 ```
-$ dis-cover --help
-usage: dis-cover [-h] [-d OUTPUT_DIRECTORY] [-p] [-o OUTPUT_FILE] [-b | -c] file
+usage: dis-cover [-h] [-d OUTPUT_DIRECTORY] [-p] [-o OUTPUT_FILE] [-l] [-b | -c] file
 
 Disasemble binaries and recover as much info as possible
 
@@ -46,6 +45,7 @@ optional arguments:
   -p, --pickle          Output info in the pickle format (used with --bin)
   -o OUTPUT_FILE, --output-file OUTPUT_FILE
                         File where the output should be written (used with --bin) (default "./reconstructed")
+  -l, --list-classes    List the classes found in the binary (used with --bin)
   -b, --bin             Extract info from a binary file (default)
   -c, --cpp             Compile C++ file under multiple scenarios and extract info from the given outputs
 ```
