@@ -86,7 +86,7 @@ class ElfAnalysis:
                 return str(name)
 
     def __str__(self):
-        output = "🏗️  List of classes found in %s:\n" % self.file_name
+        output = "🔎  List of classes found in %s:\n" % self.file_name
         return output + "\n".join([str(c) for c in self.get_classes()])
 
     def get_classes(self):

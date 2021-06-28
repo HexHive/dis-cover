@@ -68,7 +68,7 @@ def main():
                 print(analysis)
             else:
                 print(
-                    "🏗️  Analysis has found %d classes in %s"
+                    "🔎 Analysis has found %d classes in %s"
                     % (len(analysis.get_classes()), arguments.file)
                 )
             reconstruction = reconstruct(analysis)
@@ -76,7 +76,7 @@ def main():
             reconstructed_file_path = (
                 arguments.output_directory + "/" + file_name + "_reconstructed"
             )
-            print("🔧 Writing reconstructed ELF to %s" % reconstructed_file_path)
+            print("🏗️   Writing reconstructed ELF to %s" % reconstructed_file_path)
             reconstructed_file = open(reconstructed_file_path, "wb")
             reconstructed_file.write(reconstruction)
             reconstructed_file.close()
@@ -85,14 +85,14 @@ def main():
             stripped_file_path = (
                 arguments.output_directory + "/" + file_name + "_stripped"
             )
-            print("✂️  Stripping original ELF to %s" % stripped_file_path)
+            print("✂️   Stripping original ELF to %s" % stripped_file_path)
             strip = subprocess.run(
                 ["objcopy", "--strip-all", arguments.file, stripped_file_path]
             )
             if not check_for_command("eu-unstrip"):
                 return
             print(
-                "🪢  Combining reconstructed and stripped ELFs to %s"
+                "🪢   Combining reconstructed and stripped ELFs to %s"
                 % arguments.output_file
             )
             unstrip = subprocess.run(
