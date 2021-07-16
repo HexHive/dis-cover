@@ -6,7 +6,6 @@ from itanium_demangler import parse as demangle
 
 
 DATA_SECTIONS = [".rodata", ".data.rel.ro", ".data.rel.ro.local", ".rdata"]
-FUNCTION_SECTIONS = [".text", ".plt", ".extern"]
 
 
 class CppClass:
@@ -119,8 +118,6 @@ class ElfAnalysis:
 
                 if section in DATA_SECTIONS:
                     flag = "data"
-                elif section in FUNCTION_SECTIONS:
-                    flag = "function"
                 elif line_int == 0:
                     flag = "zeroes"
 
