@@ -130,9 +130,12 @@ class ElfAnalysis:
         # Append CppClass objects to self.classes
         for address in self.addresses:
             (line, flag) = self.program_map[address]
-            # First we find out if this is the beginning of a vtable
-            if flag == "zeroes" and address + 8 in self.addresses:
-                (next_line, next_flag) = self.program_map[address + 8]
+            next_v = self.program_map.get(address + 8)
+            if not next_v:
+                continue
+            (next_line, next_flag) = next_v
+             # First we find out if this is the beginning of a vtable
+            if flag == "zeroes" and next_flag == "data":
                 # If it is, we find the associated RTTI
                 success, cpp_class = self.flag_rtti_recur(next_line)
                 if cpp_class:
