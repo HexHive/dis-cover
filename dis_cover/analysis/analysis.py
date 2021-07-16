@@ -123,8 +123,6 @@ class ElfAnalysis:
                     flag = "function"
                 elif line_int == 0:
                     flag = "zeroes"
-                elif line_int <= 16777216:
-                    flag = "offset_to_top"
 
                 self.program_map[base_address + offset] = (line_int, flag)
 
@@ -136,7 +134,7 @@ class ElfAnalysis:
         for address in self.addresses:
             (line, flag) = self.program_map[address]
             # First we find out if this is the beginning of a vtable
-            if flag in ["offset_to_top", "zeroes"] and address + 8 in self.addresses:
+            if flag == "zeroes" and address + 8 in self.addresses:
                 (next_line, next_flag) = self.program_map[address + 8]
                 # If it is, we find the associated RTTI
                 success, cpp_class = self.flag_rtti_recur(next_line)
@@ -161,7 +159,7 @@ class ElfAnalysis:
                     return name, cpp_class
             return name, None
 
-        if flag not in ["unknown", "offset_to_top", "zeroes"]:
+        if flag not in ["unknown", "zeroes"]:
             return False, None
 
         # We check that the next part of the table is a name
