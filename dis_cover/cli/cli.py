@@ -68,7 +68,7 @@ def main():
                 print(analysis)
             else:
                 print(
-                    "🔎 Analysis has found %d classes in %s"
+                    "🔎  Analysis has found %d classes in %s"
                     % (len(analysis.get_classes()), arguments.file)
                 )
             reconstruction = reconstruct(analysis)
