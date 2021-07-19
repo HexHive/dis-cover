@@ -1,7 +1,5 @@
 import struct
 from elftools.elf.elffile import ELFFile
-from capstone import *
-from capstone.x86_const import *
 from itanium_demangler import parse as demangle
 
 

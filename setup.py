@@ -22,7 +22,6 @@ REQUIRES_PYTHON = ">=3.6.0"
 # What packages are required for this module to be executed?
 REQUIRED = [
     "pyelftools>=0.27",
-    "capstone>=4.0.2",
     "itanium_demangler>=1.0",
 ]
 
