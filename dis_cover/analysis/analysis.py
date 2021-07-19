@@ -132,7 +132,7 @@ class ElfAnalysis:
             if not next_v:
                 continue
             (next_line, next_flag) = next_v
-             # First we find out if this is the beginning of a vtable
+            # First we find out if this is the beginning of a vtable
             if flag == "zeroes" and next_flag == "data":
                 # If it is, we find the associated RTTI
                 success, cpp_class = self.flag_rtti_recur(next_line)
