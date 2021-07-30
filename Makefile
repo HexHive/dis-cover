@@ -3,22 +3,12 @@ build:
 	docker build -t dis-cover \
 		--build-arg USER_ID=$(shell id -u) \
 		--build-arg GROUP_ID=$(shell id -g) .
-	docker build -t dis-cover-alpine \
-		--build-arg USER_ID=$(shell id -u) \
-		--build-arg GROUP_ID=$(shell id -g) \
-		-f Dockerfile.alpine .
 
 .PHONY=run_scenarios
 run_scenarios: build
 	docker run --rm -v "${PWD}:/home/dis-cover/dis-cover" -it dis-cover bash -c "\
 		pip install -e /home/dis-cover/dis-cover &&\
-		find ./case_studies/ -iname '*.cpp' -exec ~/.local/bin/dis-cover -c {} -d case_studies/outputs \;"
-
-.PHONY=run_scenarios_alpine
-run_scenarios_alpine: build
-	docker run --rm -v "${PWD}:/home/dis-cover/dis-cover" -it dis-cover-alpine bash -c "\
-		pip install -e /home/dis-cover/dis-cover &&\
-		find ./case_studies/ -iname '*.cpp' -exec ~/.local/bin/dis-cover -c {} -d case_studies/outputs \;"
+		find ./case_studies/ -iname '*.cpp' -exec python ./case_studies/test_case_study.py {} \;"
 
 .PHONY=clean
 clean:
@@ -29,11 +19,13 @@ lint: build
 	docker run --rm -v "${PWD}:/home/dis-cover/dis-cover" -it dis-cover black .
 	docker run --rm -v "${PWD}:/home/dis-cover/dis-cover" -it dis-cover clang-format -i case_studies/*.cpp
 
+.PHONY=analyze_packages
 analyze_packages:
 	docker build -t dis-cover-analysis ./packages_analysis/
 	docker run dis-cover-analysis > analysis.pickle
 	python3 packages_analysis/process.py
 
+.PHONY=jupyter-notebook
 jupyter-notebook:
 	docker build -t dis-cover-notebook -f ./packages_analysis/Dockerfile.notebook ./packages_analysis/
 	docker run -p 8888:8888 -v ${PWD}/packages_analysis:/home/jovyan/work dis-cover-notebook

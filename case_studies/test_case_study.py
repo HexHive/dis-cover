@@ -1,7 +1,9 @@
+import subprocess
+import sys
+import os
 from elftools.elf.elffile import ELFFile
 from elftools.dwarf.enums import ENUM_DW_TAG
-from .compilation import compile_under_scenario
-from ..analysis import analyse, CppClass
+from dis_cover.analysis import analyse, CppClass
 
 COMPILERS = [
     "clang++",
@@ -51,6 +53,29 @@ def extract_namespace(DIE):
         return namespace + extract_namespace(parent)
     else:
         return ""
+
+
+def compile_under_scenario(source_file_name, scenario, output_directory):
+    (compiler, option) = scenario
+    output_file_name = "%s/%s_%s_%s" % (
+        output_directory,
+        source_file_name.split("/")[-1][:-4],
+        compiler,
+        option[1:],
+    )
+    command = [
+        compiler,
+        "-pie",
+        "-fPIC",
+        "-fPIE",
+        option,
+        source_file_name,
+        "-o",
+        output_file_name,
+    ]
+    process = subprocess.run(command)
+    if process.returncode == 0:
+        return output_file_name
 
 
 def analyse_dwarf(dwarf_info):
@@ -149,3 +174,12 @@ def run_scenarios(source_file_name, output_directory):
             print("%s classes recovered (%s %s)" % (output, compiler, option))
             for exception in exceptions:
                 print("  %s not recovered" % exception)
+
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("usage: test_case_study.py <cpp_code_file>")
+        sys.exit(1)
+    file_name = sys.argv[1]
+    output_dir = os.path.dirname(sys.argv[0]) + "/outputs"
+    run_scenarios(file_name, output_dir)
