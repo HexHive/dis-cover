@@ -27,7 +27,7 @@ You can install dis-cover by running `pip install dis-cover`.
 Here are the CLI options :
 
 ```
-usage: dis-cover [-h] [-d OUTPUT_DIRECTORY] [-p] [-o OUTPUT_FILE] [-l] file
+usage: dis-cover [-h] [-d OUTPUT_DIRECTORY] [-p PICKLE] [-o OUTPUT_FILE] [-l] [-g GRAPH] file
 
 Disasemble binaries and recover as much info as possible
 
@@ -38,17 +38,29 @@ optional arguments:
   -h, --help            show this help message and exit
   -d OUTPUT_DIRECTORY, --output-directory OUTPUT_DIRECTORY
                         Directory where the temporary files are written (default "/tmp")
-  -p, --pickle          Output info in the pickle format
+  -p PICKLE, --pickle PICKLE
+                        Output classes in the pickle format into PICKLE.
   -o OUTPUT_FILE, --output-file OUTPUT_FILE
-                        File where the output should be written (default "./reconstructed")
+                        File where the reconstructed binary should be written (default "./reconstructed")
   -l, --list-classes    List the classes found in the binary
-
+  -g GRAPH, --graph GRAPH
+                        Place a .dot file (used to create a Graphviz graph) into GRAPH.
 ```
 
-## Still TODO
+### Creating a graph from the class hierarchy
 
+With the `-g` option, you can output a ".dot" file.
+
+Using the `graphviz` package, you can then create an SVG graph using the command :
+
+```
+dot -Tsvg your_file.dot -o graph.svg"
+```
+
+## Possible extensions of this tool
+
+- Look into .debug-pubtypes section
 - Verify objcopy and eu-unstrip outputs (priority: medium)
 - Add better error handling and more helpful messages (priority: medium)
 - Set NOBIT flag in the section headers (priority: low)
-- Remodel output to be more understandable (priority: low)
 - Find a way to compute the size of the classes (priority: low)

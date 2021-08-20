@@ -1,6 +1,7 @@
 # Outputs
 case_studies/outputs/*
 *.pickle
+*.dot
 reconstructed
 
 # Byte-compiled / optimized / DLL files
