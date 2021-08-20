@@ -54,7 +54,7 @@ With the `-g` option, you can output a ".dot" file.
 Using the `graphviz` package, you can then create an SVG graph using the command :
 
 ```
-dot -Tsvg your_file.dot -o graph.svg"
+dot -Tsvg your_file.dot -o graph.svg
 ```
 
 ## Possible extensions of this tool
