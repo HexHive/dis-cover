@@ -66,18 +66,37 @@ class Reconstruction:
         self.elffile = analysis.elffile
         self.classes = analysis.classes
 
-    def reconstruct(self):
         # The four main parts of an ELF file that we will fill out
         self.elf_header = b""
         self.program_header_table = b""
         self.sections = b""
         self.section_header_table = b""
 
+        # Attributes related to the section_header_table and the sections
+        self.e_shnum = 0
+        self.e_shstrndx = 0
+        self.sections_offset = 0
+        self.sections_list = []
+        self.shstrtab_data = b""
+
+        # Attributes related to the debug sections
+        self.debug_info = b""
+        self.debug_abbrev = b""
+        self.debug_str = b""
+
+        # Attributes related to the symbol sections
+        self.st_shndx = 0
+        self.symtab = b""
+        self.strtab = b""
+
+        # The final cumulated data
+        self.data = b""
+
+    def reconstruct(self):
         self.construct_program_header_table()
         self.construct_sections_and_sections_header_table()
         self.construct_elf_header()
 
-        self.data = b""
         self.data += self.elf_header
         self.data += self.program_header_table
         self.data += self.sections
@@ -106,26 +125,14 @@ class Reconstruction:
 
     # Construct the sections and section header table
     def construct_sections_and_sections_header_table(self):
-
-        self.sections_list = []
-        self.e_shnum = 0
-        self.e_shstrndx = 0
-        self.shstrtab_data = b""
         self.sections_offset = int("0x40", 16) + len(self.program_header_table)
-        # self.sections_offset = len(self.program_header_table)
-
-        # The first field is always empty
-        # self.section_header_table += b"\x00" * 64
 
         for section in self.elffile.iter_sections():
             section_data = b""
             section_header = b""
 
-            # We skip the .shstrtab section, we will do it after the SECTIONS_TO_CREATE
-            if section.name == ".shstrtab":
-                continue
-            # We skip these for now if they exist
-            elif section.name in SECTIONS_TO_CREATE:
+            # We skip the .shstrtab section and the sections we will create later
+            if section.name == ".shstrtab" or section.name in SECTIONS_TO_CREATE:
                 continue
 
             if section.name == ".data.rel.ro":
@@ -180,7 +187,7 @@ class Reconstruction:
             self.shstrtab_data += section_name.encode() + b"\x00"
             self.sections += section_data
             self.section_header_table += section_header
-            self.sections_list.append(section.name)
+            self.sections_list.append(section_name)
 
         # We write the .shstrtab section
         self.e_shstrndx = self.e_shnum
@@ -239,7 +246,7 @@ class Reconstruction:
         debug_abbrev += b"\x03"  # abbrev 3
         debug_abbrev += b"\x1c"  # inheritance
         debug_abbrev += b"\x00"  # no children
-        debug_abbrev += b"\x49\x13"  # type: ref4
+        debug_abbrev += b"\x49\x13" # type=ref4
         debug_abbrev += b"\x00\x00"
 
         debug_abbrev += b"\x00"
@@ -258,7 +265,7 @@ class Reconstruction:
         debug_info += b"\x00\x00\x00\x00\x00\x00\x00\x00"  # low_pc
         debug_info += b"\x00\x00\x00\x00"  # ranges
 
-        self.first_class_location = len(debug_info) + 4
+        first_class_offset = len(debug_info) + 4
 
         for cpp_class in self.classes:
             # Class
@@ -280,7 +287,7 @@ class Reconstruction:
             for inheritance in cpp_class.inherits_from:
                 debug_info += b"\x03"  # abbrev number
                 debug_info += int_to_bytes(
-                    self.find_class_location(inheritance), width=4
+                    self.find_class_location(inheritance, first_class_offset), width=4
                 )  # type
 
             # Null tag
@@ -297,21 +304,20 @@ class Reconstruction:
         self.debug_abbrev = debug_abbrev
         self.debug_str = debug_str
 
-    def find_class_location(self, cpp_class):
-        location = self.first_class_location
-        for c in self.classes:
-            if c.name == cpp_class:
+    def find_class_location(self, cpp_class_to_find, offset):
+        location = offset
+        for cpp_class in self.classes:
+            if cpp_class.name == cpp_class_to_find:
                 return location
             location += 12
-            for i in c.inherits_from:
-                location += 5
+            location += 5 * len(cpp_class.inherits_from)
         return 0
 
     def build_table_sections(self):
 
         # First, we check the existing symtab and import the existing symbols
         symtab_section = self.elffile.get_section_by_name(".symtab")
-        n = -1
+        counter = -1
 
         symtab = b""
         strtab = b""
@@ -321,7 +327,7 @@ class Reconstruction:
 
         if symtab_section:
             for symbol in symtab_section.iter_symbols():
-                n += 1
+                counter += 1
                 skip_symbol = False
 
                 # We check if the type of the table is "STT_SECTION"
@@ -342,7 +348,7 @@ class Reconstruction:
                     continue
 
                 entry_offset = (
-                    symtab_section["sh_offset"] + n * symtab_section["sh_entsize"]
+                    symtab_section["sh_offset"] + counter * symtab_section["sh_entsize"]
                 )
                 symtab_section.stream.seek(entry_offset)
                 symbol_value = symtab_section.stream.read(symtab_section["sh_entsize"])
@@ -368,27 +374,27 @@ class Reconstruction:
 
                     strtab += symbol.name.encode() + b"\x00"
 
-        for c in self.classes:
+        for cpp_class in self.classes:
             symtab += int_to_bytes(len(strtab), width=4)  # st_name
             symtab += b"\x21"  # st_info
             symtab += b"\x00"  # st_other
             symtab += int_to_bytes(self.st_shndx, width=2)  # st_shndx (.data.rel.ro id)
-            symtab += int_to_bytes(c.address, width=8)  # st_value
+            symtab += int_to_bytes(cpp_class.address, width=8)  # st_value
             symtab += b"\x10\x00\x00\x00\x00\x00\x00\x00"  # st_size # TODO
 
-            strtab += b"_ZTI" + mangle(c.name).encode() + b"\x00"
+            strtab += b"_ZTI" + mangle(cpp_class.name).encode() + b"\x00"
 
             symtab += int_to_bytes(len(strtab), width=4)  # st_name
             symtab += b"\x21"  # st_info
             symtab += b"\x00"  # st_other
             symtab += int_to_bytes(self.st_shndx, width=2)  # st_shndx (.data.rel.ro id)
             try:
-                symtab += int_to_bytes(c.vtable_address, width=8)  # st_value
+                symtab += int_to_bytes(cpp_class.vtable_address, width=8)  # st_value
             except:
                 symtab += b"\x00" * 8  # st_value
             symtab += b"\x20\x00\x00\x00\x00\x00\x00\x00"  # st_size # TODO
 
-            strtab += b"_ZTV" + mangle(c.name).encode() + b"\x00"
+            strtab += b"_ZTV" + mangle(cpp_class.name).encode() + b"\x00"
 
         self.symtab = symtab
         self.strtab = strtab
