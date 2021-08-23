@@ -88,12 +88,12 @@ def main():
     with open(reconstructed_file_path, "wb") as reconstructed_file:
         reconstructed_file.write(reconstruction)
 
-    if not check_for_command("objcoy"):
+    if not check_for_command("objcopy"):
         return
     stripped_file_path = arguments.output_directory + "/" + file_name + "_stripped"
     print("✂️   Stripping original ELF to %s" % stripped_file_path)
     subprocess.run(
-        ["objcoy", "--strip-all", arguments.file, stripped_file_path], check=True
+        ["objcopy", "--strip-all", arguments.file, stripped_file_path], check=True
     )
 
     if not check_for_command("eu-unstrip"):
@@ -121,7 +121,7 @@ def main():
 def check_for_command(command):
     """Check if a command exists on the system"""
     try:
-        subprocess.run("command -v " + command, shell=True, check=True)
+        subprocess.run("command -v " + command, shell=True, check=True, capture_output=True)
         return True
     except subprocess.CalledProcessError:
         print(command + " is needed to continue with the process")
