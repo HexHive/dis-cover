@@ -1,4 +1,5 @@
-import sys
+"""Main command-line interface logic"""
+
 import argparse
 import pickle
 import subprocess
@@ -7,6 +8,7 @@ from ..reconstruction import reconstruct
 
 
 def main():
+    """The main method for the dis-cover command-line interface"""
     argp = argparse.ArgumentParser(
         description="Disasemble binaries and recover as much info as possible"
     )
@@ -53,22 +55,21 @@ def main():
 
     # Creating a pickle file for later analysis of the classes and inheritance
     if arguments.pickle:
-        pickle_file = open(arguments.pickle, "wb")
-        pickle_file.write(pickle.dumps(analysis.classes))
-        pickle_file.close()
+        with open(arguments.pickle, "wb") as pickle_file:
+            pickle_file.write(pickle.dumps(analysis.classes))
 
     # Creating a .dot file for graphs
     if arguments.graph:
-        gv_file = open(arguments.graph, "w")
-        gv_file.write("digraph G {\n")
-        gv_file.write("  node [shape=record];\n")
-        for c in analysis.classes:
-            # We ommit the classes that have no inheritance
-            for p in c.inherits_from:
-                gv_file.write('  "%s" -> "%s";\n' % (p, c.name))
-        gv_file.write("}")
-        gv_file.close()
+        with open(arguments.graph, "w", encoding="utf-8") as gv_file:
+            gv_file.write("digraph G {\n")
+            gv_file.write("  node [shape=record];\n")
+            for cpp_class in analysis.classes:
+                # We ommit the classes that have no inheritance
+                for parent in cpp_class.inherits_from:
+                    gv_file.write('  "%s" -> "%s";\n' % (parent, cpp_class.name))
+            gv_file.write("}")
 
+    # Printing (or not) the list of classes
     if arguments.list_classes:
         print(analysis)
     else:
@@ -84,27 +85,29 @@ def main():
         arguments.output_directory + "/" + file_name + "_reconstructed"
     )
     print("🏗️   Writing reconstructed ELF to %s" % reconstructed_file_path)
-    reconstructed_file = open(reconstructed_file_path, "wb")
-    reconstructed_file.write(reconstruction)
-    reconstructed_file.close()
-    if not check_for_command("objcopy"):
+    with open(reconstructed_file_path, "wb") as reconstructed_file:
+        reconstructed_file.write(reconstruction)
+
+    if not check_for_command("objcoy"):
         return
     stripped_file_path = arguments.output_directory + "/" + file_name + "_stripped"
     print("✂️   Stripping original ELF to %s" % stripped_file_path)
-    strip = subprocess.run(
-        ["objcopy", "--strip-all", arguments.file, stripped_file_path]
+    subprocess.run(
+        ["objcoy", "--strip-all", arguments.file, stripped_file_path], check=True
     )
+
     if not check_for_command("eu-unstrip"):
         return
     print("🪢   Combining reconstructed and stripped ELFs to %s" % arguments.output_file)
-    unstrip = subprocess.run(
+    subprocess.run(
         [
             "eu-unstrip",
             stripped_file_path,
             reconstructed_file_path,
             "-o",
             arguments.output_file,
-        ]
+        ],
+        check=True,
     )
 
     # We add a small helper message if the user created a .dot file
@@ -115,11 +118,11 @@ def main():
         print("      $ dot -Tsvg %s -o graph.svg" % arguments.graph)
 
 
-# Check if command exists on the system
 def check_for_command(command):
-    c = subprocess.run("command -v " + command, shell=True, capture_output=True)
-    if c.returncode == 0:
-        return 1
-    else:
+    """Check if a command exists on the system"""
+    try:
+        subprocess.run("command -v " + command, shell=True, check=True)
+        return True
+    except subprocess.CalledProcessError:
         print(command + " is needed to continue with the process")
-        return 0
+        return False
