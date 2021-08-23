@@ -57,6 +57,13 @@ Using the `graphviz` package, you can then create an SVG graph using the command
 dot -Tsvg your_file.dot -o graph.svg
 ```
 
+## How to use the development version
+
+If you would like to make modifications to this tools and use that modified version, simply clone this repository and run this command in this directory:
+```
+pip install -e .
+```
+
 ## Possible extensions of this tool
 
 - Look into .debug-pubtypes section
