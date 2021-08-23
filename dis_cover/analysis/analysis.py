@@ -1,16 +1,18 @@
-import struct
+"""Binary analysis logic"""
+
 from elftools.elf.elffile import ELFFile
 from itanium_demangler import parse as demangle
-
 
 DATA_SECTIONS = [".rodata", ".data.rel.ro", ".data.rel.ro.local", ".rdata"]
 
 
 class CppClass:
+    """Class to represent a class in a C++ binary"""
     def __init__(self, name):
         self.name = name
         self.inherits_from = set()
         self.address = None
+        self.vtable_address = None
 
     def __str__(self):
         output = self.name
@@ -31,10 +33,8 @@ class CppClass:
 class ElfAnalysis:
     """An analysis of an ELF file"""
 
-    def __init__(self, file_name):
-        self.file_name = file_name
-        f = open(self.file_name, "rb")
-        self.elffile = ELFFile(f)
+    def __init__(self, elf_file):
+        self.elffile = ELFFile(elf_file)
         self.sections = []
         for section in self.elffile.iter_sections():
             self.sections.append(
@@ -45,8 +45,10 @@ class ElfAnalysis:
         self.names = {}
         self.sections_data = {}
         self.addresses = []
+        self.program_map = {}
 
     def get_section_name(self, addr):
+        """Get the section name at a given address"""
         if addr < 0:
             return "out of bounds"
         for (end, name) in self.sections:
@@ -55,20 +57,22 @@ class ElfAnalysis:
         return "out of bounds"
 
     def get_section_data_by_name(self, name):
-        if self.sections_data.get(name) == None:
+        """Get section data given the section name"""
+        if self.sections_data.get(name) is None:
             self.sections_data[name] = self.elffile.get_section_by_name(name).data()
         return self.sections_data[name]
 
     def extract_name(self, addr):
-        if self.names.get(addr) != None:
+        """Extract the RTTI name at the given address"""
+        if self.names.get(addr) is not None:
             return self.names[addr]
         section_name = self.get_section_name(addr)
         if section_name == "out of bounds":
-            return
+            return ""
         section = self.elffile.get_section_by_name(section_name)
         section_data = self.get_section_data_by_name(section_name)
         relative_address = addr - section["sh_addr"]
-        if relative_address >= 0 and relative_address < len(section_data):
+        if 0 <= relative_address < len(section_data):
             name = "_Z"
             while (
                 relative_address < len(section_data)
@@ -77,22 +81,27 @@ class ElfAnalysis:
                 name += chr(section_data[relative_address])
                 relative_address += 1
             self.names[addr] = str(demangle(name))
-            try:
-                return str(demangle(name))
-            except:
-                return str(name)
+            return str(demangle(name))
+        return ""
 
     def __str__(self):
-        output = "🔎  List of classes found in %s:\n" % self.file_name
-        return output + "\n".join([str(c) for c in self.get_classes()])
+        """Return classes list as string output"""
+        return "\n".join([str(c) for c in self.get_classes()])
 
     def get_classes(self):
+        """Get the classes we have found"""
         return self.classes
 
+    def get_line_and_flag(self, address):
+        """Get line and flag at address"""
+        value = self.program_map.get(address)
+        if not value:
+            return None, None
+        (line, flag) = value
+        return line, flag
+
     def extract_rtti_info(self):
-
-        self.program_map = {}
-
+        """Extract information from RTTIs in the binary"""
         for data_section_name in DATA_SECTIONS:
 
             data_section = self.elffile.get_section_by_name(data_section_name)
@@ -108,8 +117,7 @@ class ElfAnalysis:
             for offset in range(0, len(data), 8):
                 line = list(data[offset : offset + 8])
                 line.reverse()
-                line_str = "".join([format(d, "02x") for d in line])
-                line_int = int(line_str, 16)
+                line_int = int("".join([format(d, "02x") for d in line]), 16)
                 section = self.get_section_name(line_int)
 
                 flag = "unknown"
@@ -128,10 +136,9 @@ class ElfAnalysis:
         # Append CppClass objects to self.classes
         for address in self.addresses:
             (line, flag) = self.program_map[address]
-            next_v = self.program_map.get(address + 8)
-            if not next_v:
+            (next_line, next_flag) = self.get_line_and_flag(address + 8)
+            if not next_line:
                 continue
-            (next_line, next_flag) = next_v
             # First we find out if this is the beginning of a vtable
             if flag == "zeroes" and next_flag == "data":
                 # If it is, we find the associated RTTI
@@ -144,11 +151,9 @@ class ElfAnalysis:
                     self.program_map[address] = (line, "begin_vtable")
 
     def flag_rtti_recur(self, address):
+        """Recursively flag the RTTIs in a binary"""
         # We check that the beginning of the table is the beginning of an RTTI
-        rtti_start = self.program_map.get(address)
-        if not rtti_start:
-            return False, None
-        (line, flag) = rtti_start
+        (line, flag) = self.get_line_and_flag(address)
 
         if flag == "begin_rtti":
             name = self.extract_name(self.program_map[address + 8][0])
@@ -161,10 +166,7 @@ class ElfAnalysis:
             return False, None
 
         # We check that the next part of the table is a name
-        name_field = self.program_map.get(address + 8)
-        if not name_field:
-            return False, None
-        (name_line, name_flag) = name_field
+        (name_line, name_flag) = self.get_line_and_flag(address + 8)
         if name_flag != "data":
             return False, None
 
@@ -192,10 +194,8 @@ class ElfAnalysis:
         return name, cpp_class
 
 
-def analyse(elf_file_name):
-
-    analysis = ElfAnalysis(elf_file_name)
-
+def analyse(elf_file):
+    """Main analysis method"""
+    analysis = ElfAnalysis(elf_file)
     analysis.extract_rtti_info()
-
     return analysis

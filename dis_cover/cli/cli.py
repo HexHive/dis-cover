@@ -50,8 +50,10 @@ def main():
     )
     arguments = argp.parse_args()
 
-    # We run the analysis
-    analysis = analyse(arguments.file)
+    # We run the analysis and reconstruction
+    with open(arguments.file, "rb") as elf_file:
+        analysis = analyse(elf_file)
+        reconstruction = reconstruct(analysis)
 
     # Creating a pickle file for later analysis of the classes and inheritance
     if arguments.pickle:
@@ -70,16 +72,14 @@ def main():
             gv_file.write("}")
 
     # Printing (or not) the list of classes
+    print(
+        "🔎  Analysis has found %d classes in %s"
+        % (len(analysis.get_classes()), arguments.file)
+    )
     if arguments.list_classes:
         print(analysis)
-    else:
-        print(
-            "🔎  Analysis has found %d classes in %s"
-            % (len(analysis.get_classes()), arguments.file)
-        )
 
     # Now we can start the reconstruction, stripping and combining of the binaries
-    reconstruction = reconstruct(analysis)
     file_name = arguments.file.split("/")[-1]
     reconstructed_file_path = (
         arguments.output_directory + "/" + file_name + "_reconstructed"
