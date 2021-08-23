@@ -1,2 +1,2 @@
-"""Method and class related to the command-line interface"""
-from .analysis import analyse, CppClass
+"""Method and class related to the analysis"""
+from .analysis import analyze, CppClass

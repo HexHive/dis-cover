@@ -3,7 +3,7 @@
 import argparse
 import pickle
 import subprocess
-from ..analysis import analyse
+from ..analysis import analyze
 from ..reconstruction import reconstruct
 
 
@@ -52,7 +52,7 @@ def main():
 
     # We run the analysis and reconstruction
     with open(arguments.file, "rb") as elf_file:
-        analysis = analyse(elf_file)
+        analysis = analyze(elf_file)
         reconstruction = reconstruct(analysis)
 
     # Creating a pickle file for later analysis of the classes and inheritance
@@ -121,7 +121,9 @@ def main():
 def check_for_command(command):
     """Check if a command exists on the system"""
     try:
-        subprocess.run("command -v " + command, shell=True, check=True, capture_output=True)
+        subprocess.run(
+            "command -v " + command, shell=True, check=True, capture_output=True
+        )
         return True
     except subprocess.CalledProcessError:
         print(command + " is needed to continue with the process")

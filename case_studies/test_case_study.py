@@ -3,7 +3,7 @@ import sys
 import os
 from elftools.elf.elffile import ELFFile
 from elftools.dwarf.enums import ENUM_DW_TAG
-from dis_cover.analysis import analyse, CppClass
+from dis_cover.analysis import analyze, CppClass
 
 COMPILERS = [
     "clang++",
@@ -79,7 +79,7 @@ def compile_under_scenario(source_file_name, scenario, output_directory):
         return output_file_name
 
 
-def analyse_dwarf(dwarf_info):
+def analyze_dwarf(dwarf_info):
     classes = dict()
     # For each Compile Unit
     for CU in dwarf_info.iter_CUs():
@@ -156,7 +156,7 @@ def run_scenarios(source_file_name, output_directory):
     # Extract the dwarf data from the source
     dwarf_info = extract_dwarf_data(source_file_name, output_directory)
     # Analyze the dwarf data to compare it later with what we find
-    dwarf_results = analyse_dwarf(dwarf_info)
+    dwarf_results = analyze_dwarf(dwarf_info)
 
     # Print in bold the source file name
     print("%sRunning scenario for %s%s" % (Color.BOLD, source_file_name, Color.END))
@@ -169,7 +169,8 @@ def run_scenarios(source_file_name, output_directory):
                 source_file_name, (compiler, option), output_directory
             )
             # Run the analysis
-            results = analyse(elf_file_name)
+            with open(elf_file_name, "rb") as elf_file:
+                results = analyze(elf_file)
             # Compare the results with the dwarf results
             output, exceptions = compare_results(results, dwarf_results)
             print("%s classes recovered (%s %s)" % (output, compiler, option))

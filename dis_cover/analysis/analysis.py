@@ -8,6 +8,7 @@ DATA_SECTIONS = [".rodata", ".data.rel.ro", ".data.rel.ro.local", ".rdata"]
 
 class CppClass:
     """Class to represent a class in a C++ binary"""
+
     def __init__(self, name):
         self.name = name
         self.inherits_from = set()
@@ -194,7 +195,7 @@ class ElfAnalysis:
         return name, cpp_class
 
 
-def analyse(elf_file):
+def analyze(elf_file):
     """Main analysis method"""
     analysis = ElfAnalysis(elf_file)
     analysis.extract_rtti_info()
