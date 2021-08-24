@@ -67,6 +67,72 @@ def int_to_bytes(i, width=2):
     return bytes.fromhex(hex(i)[2:].zfill(width * 2))[::-1]
 
 
+class ELFHeader:
+    """ELF header builder"""
+
+    def __init__(self, analysis):
+        self.data = b""
+
+    def build(self):
+        """Build the ELF header"""
+        pass
+
+
+class ProgramHeaderTable:
+    """Program header table builder"""
+
+    def __init__(self, analysis):
+        self.data = b""
+        self.elffile = analysis.elffile
+
+    def build(self):
+        """Build the program header table"""
+        for segment in self.elffile.iter_segments():
+            self.copy_row(segment.header)
+
+    def copy_row(self, header):
+        """
+        Copy a row from the original header, with some p_filesz fields set to 0
+        """
+        row = b""
+        row += int_to_bytes(ENUM_P_TYPE_BASE[header["p_type"]], width=4)
+        row += int_to_bytes(header["p_flags"], width=4)
+        row += int_to_bytes(header["p_offset"], width=8)
+        row += int_to_bytes(header["p_vaddr"], width=8)
+        row += int_to_bytes(header["p_paddr"], width=8)
+        row += int_to_bytes(
+            header["p_filesz"]
+            if header["p_type"] in ["PT_PHDR", "PT_NOTE"]
+            else 0,
+            width=8,
+        )
+        row += int_to_bytes(header["p_memsz"], width=8)
+        row += int_to_bytes(header["p_align"], width=8)
+        self.data += row
+
+
+class Sections:
+    """Sections builder"""
+
+    def __init__(self, analysis):
+        self.data = b""
+
+    def build(self):
+        """Build the sections"""
+        pass
+
+
+class SectionHeaderTable:
+    """Section header table builder"""
+
+    def __init__(self, analysis):
+        self.data = b""
+
+    def build(self):
+        """Build the section header table"""
+        pass
+
+
 class Reconstruction:
     """The reconstruction after an analysis"""
 
@@ -76,9 +142,13 @@ class Reconstruction:
 
         # The four main parts of an ELF file that we will fill out
         self.elf_header = b""
-        self.program_header_table = b""
         self.sections = b""
         self.section_header_table = b""
+
+        # self.elf_header = ELFHeader(analysis)
+        self.program_header_table = ProgramHeaderTable(analysis)
+        # self.sections = Sections(analysis)
+        # self.section_header_table = SectionHeaderTable(analysis)
 
         # Attributes related to the section_header_table and the sections
         self.e_shnum = 0
@@ -102,39 +172,18 @@ class Reconstruction:
 
     def reconstruct(self):
         """Main reconstruction method"""
-        self.construct_program_header_table()
+        self.program_header_table.build()
         self.construct_sections_and_sections_header_table()
         self.construct_elf_header()
 
         self.data += self.elf_header
-        self.data += self.program_header_table
+        self.data += self.program_header_table.data
         self.data += self.sections
         self.data += self.section_header_table
 
-    def construct_program_header_table(self):
-        """Construct the program header table"""
-        # We simply copy the original header table, with some p_filesz fields set
-        # to 0
-        for segment in self.elffile.iter_segments():
-            header = segment.header
-            program_header = b""
-            program_header += int_to_bytes(ENUM_P_TYPE_BASE[header["p_type"]], width=4)
-            program_header += int_to_bytes(header["p_flags"], width=4)
-            program_header += int_to_bytes(header["p_offset"], width=8)
-            program_header += int_to_bytes(header["p_vaddr"], width=8)
-            program_header += int_to_bytes(header["p_paddr"], width=8)
-            if segment.header["p_type"] in ["PT_PHDR", "PT_NOTE"]:
-                program_header += int_to_bytes(header["p_filesz"], width=8)
-            else:
-                program_header += int_to_bytes(0, width=8)
-            program_header += int_to_bytes(header["p_memsz"], width=8)
-            program_header += int_to_bytes(header["p_align"], width=8)
-
-            self.program_header_table += program_header
-
     def construct_sections_and_sections_header_table(self):
         """Construct the sections and section header table"""
-        self.sections_offset = int("0x40", 16) + len(self.program_header_table)
+        self.sections_offset = int("0x40", 16) + len(self.program_header_table.data)
 
         for section in self.elffile.iter_sections():
             section_data = b""
@@ -257,10 +306,10 @@ class Reconstruction:
             ENUM_DW_CHILDREN["DW_CHILDREN_yes"],
             ENUM_DW_AT["DW_AT_containing_type"],
             ENUM_DW_FORM["DW_FORM_ref4"],
-
-            ENUM_DW_AT["DW_AT_calling_convention"], # TODO is calling_convention: data1 expandable ?
+            ENUM_DW_AT[
+                "DW_AT_calling_convention"
+            ],  # TODO is calling_convention: data1 expandable ?
             ENUM_DW_FORM["DW_FORM_data1"],
-
             ENUM_DW_AT["DW_AT_name"],
             ENUM_DW_FORM["DW_FORM_strp"],
             ENUM_DW_AT["DW_AT_byte_size"],
@@ -436,7 +485,7 @@ class Reconstruction:
 
         self.elf_header += int_to_bytes(int("0x40", 16), width=8)  # e_phoff
         self.elf_header += int_to_bytes(
-            int("0x40", 16) + len(self.program_header_table) + len(self.sections),
+            int("0x40", 16) + len(self.program_header_table.data) + len(self.sections),
             width=8,
         )  # e_shoff
 
