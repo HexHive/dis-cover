@@ -1,4 +1,8 @@
+"""ELF reconstruction logic"""
+
+import struct
 from elftools.elf.enums import ENUM_SH_TYPE_BASE, ENUM_P_TYPE_BASE
+from elftools.dwarf.enums import ENUM_DW_TAG, ENUM_DW_CHILDREN, ENUM_DW_AT, ENUM_DW_FORM
 
 SECTIONS_TO_KEEP = [
     ".note.gnu.build-id",
@@ -39,6 +43,7 @@ SYMTAB_SECTION_HEADER = {
 
 
 def build_symtab_section_header(sh_link):
+    """Build a symtab section header"""
     SYMTAB_SECTION_HEADER["sh_link"] = sh_link
     return SYMTAB_SECTION_HEADER
 
@@ -53,9 +58,12 @@ STRTAB_SECTION_HEADER = {
     "sh_entsize": 0,
 }
 
-# Transforms an int to a bytes representation, in little endian format, padded
-# using the width argument (in bytes).
+
 def int_to_bytes(i, width=2):
+    """
+    Transforms an int to a bytes representation, in little endian format, padded
+    using the width argument (in bytes).
+    """
     return bytes.fromhex(hex(i)[2:].zfill(width * 2))[::-1]
 
 
@@ -93,6 +101,7 @@ class Reconstruction:
         self.data = b""
 
     def reconstruct(self):
+        """Main reconstruction method"""
         self.construct_program_header_table()
         self.construct_sections_and_sections_header_table()
         self.construct_elf_header()
@@ -102,8 +111,8 @@ class Reconstruction:
         self.data += self.sections
         self.data += self.section_header_table
 
-    # Construct the program header table
     def construct_program_header_table(self):
+        """Construct the program header table"""
         # We simply copy the original header table, with some p_filesz fields set
         # to 0
         for segment in self.elffile.iter_segments():
@@ -123,8 +132,8 @@ class Reconstruction:
 
             self.program_header_table += program_header
 
-    # Construct the sections and section header table
     def construct_sections_and_sections_header_table(self):
+        """Construct the sections and section header table"""
         self.sections_offset = int("0x40", 16) + len(self.program_header_table)
 
         for section in self.elffile.iter_sections():
@@ -202,6 +211,7 @@ class Reconstruction:
         self.sections_list.append(".shstrtab")
 
     def create_section_header(self, header, sh_size=-1):
+        """Create a single section header"""
         if sh_size == -1:
             sh_size = header["sh_size"]
         section_header = b""
@@ -220,36 +230,53 @@ class Reconstruction:
         return section_header
 
     def build_debug_sections(self):
+        """Build the debug sections"""
         debug_info = b""
         debug_abbrev = b""
         debug_str = b""
 
         # We create the debug_abbrev types
 
-        debug_abbrev += b"\x01"  # abbrev 1
-        debug_abbrev += b"\x11"  # compile_unit
-        debug_abbrev += b"\x01"  # has children
-        debug_abbrev += b"\x13\x05"  # language: data2
-        debug_abbrev += b"\x11\x01"  # low_pc: address
-        debug_abbrev += b"\x55\x17"  # ranges: sec_offset
-        debug_abbrev += b"\x00\x00"
+        debug_abbrev += struct.pack(
+            "9Bxx",
+            1,
+            ENUM_DW_TAG["DW_TAG_compile_unit"],
+            ENUM_DW_CHILDREN["DW_CHILDREN_yes"],
+            ENUM_DW_AT["DW_AT_language"],
+            ENUM_DW_FORM["DW_FORM_data2"],
+            ENUM_DW_AT["DW_AT_low_pc"],
+            ENUM_DW_FORM["DW_FORM_addr"],
+            ENUM_DW_AT["DW_AT_ranges"],
+            ENUM_DW_FORM["DW_FORM_sec_offset"],
+        )
 
-        debug_abbrev += b"\x02"  # abbrev 2
-        debug_abbrev += b"\x02"  # class_type
-        debug_abbrev += b"\x01"  # has children
-        debug_abbrev += b"\x1d\x13"  # containing_type: ref4
-        debug_abbrev += b"\x36\x0b"  # calling_convention: data1 EXPANDABLE ?
-        debug_abbrev += b"\x03\x0e"  # name: strp
-        debug_abbrev += b"\x0b\x0b"  # byte_size: data1
-        debug_abbrev += b"\x00\x00"
+        debug_abbrev += struct.pack(
+            "11Bxx",
+            2,
+            ENUM_DW_TAG["DW_TAG_class_type"],
+            ENUM_DW_CHILDREN["DW_CHILDREN_yes"],
+            ENUM_DW_AT["DW_AT_containing_type"],
+            ENUM_DW_FORM["DW_FORM_ref4"],
 
-        debug_abbrev += b"\x03"  # abbrev 3
-        debug_abbrev += b"\x1c"  # inheritance
-        debug_abbrev += b"\x00"  # no children
-        debug_abbrev += b"\x49\x13" # type=ref4
-        debug_abbrev += b"\x00\x00"
+            ENUM_DW_AT["DW_AT_calling_convention"], # TODO is calling_convention: data1 expandable ?
+            ENUM_DW_FORM["DW_FORM_data1"],
 
-        debug_abbrev += b"\x00"
+            ENUM_DW_AT["DW_AT_name"],
+            ENUM_DW_FORM["DW_FORM_strp"],
+            ENUM_DW_AT["DW_AT_byte_size"],
+            ENUM_DW_FORM["DW_FORM_data1"],
+        )
+
+        debug_abbrev += struct.pack(
+            "5Bxx",
+            3,
+            ENUM_DW_TAG["DW_TAG_inheritance"],
+            ENUM_DW_CHILDREN["DW_CHILDREN_no"],
+            ENUM_DW_AT["DW_AT_type"],
+            ENUM_DW_FORM["DW_FORM_ref4"],
+        )
+
+        debug_abbrev += struct.pack("x")
 
         # We create the compilation unit header
         # The first field, unit_length, is added at the end of this method
@@ -305,6 +332,7 @@ class Reconstruction:
         self.debug_str = debug_str
 
     def find_class_location(self, cpp_class_to_find, offset):
+        """Find the class location in the debug info from the class name"""
         location = offset
         for cpp_class in self.classes:
             if cpp_class.name == cpp_class_to_find:
@@ -314,7 +342,7 @@ class Reconstruction:
         return 0
 
     def build_table_sections(self):
-
+        """Build the .symtab and .strtab sections"""
         # First, we check the existing symtab and import the existing symbols
         symtab_section = self.elffile.get_section_by_name(".symtab")
         counter = -1
@@ -400,7 +428,7 @@ class Reconstruction:
         self.strtab = strtab
 
     def construct_elf_header(self):
-        # We construct the elf header
+        """Construct the elf header"""
         self.elffile.stream.seek(0)
         self.elf_header += self.elffile.stream.read(
             int("0x20", 16)
@@ -419,8 +447,8 @@ class Reconstruction:
         self.elf_header += int_to_bytes(self.e_shstrndx)  # e_shstrndx
 
 
-# Mangle a name according to the abi
 def mangle(name):
+    """Mangle a name according to the ABI"""
     namespaces = name.split("::")
     mangled_name = ""
     for namespace in namespaces:
@@ -431,9 +459,7 @@ def mangle(name):
 
 
 def reconstruct(analysis):
-
+    """Main reconstruct method"""
     reconstruction = Reconstruction(analysis)
-
     reconstruction.reconstruct()
-
     return reconstruction.data
