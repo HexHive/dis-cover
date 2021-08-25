@@ -1,7 +1,7 @@
 # dis-cover
 Disassemble binaries and recover as much info as possible
 
-This project was created by [Louis Merlin](https://github.com/louismerlin/) in Spring 2021 as part of his master thesis at [HexHive](https://hexhive.epfl.ch/), with a fellowship from [armasuisse](https://www.ar.admin.ch/en/home.html).
+This project was created by [Louis Merlin](https://github.com/louismerlin/) in Spring 2021 as part of his master thesis at [HexHive](https://hexhive.epfl.ch/), with a fellowship from the [armasuisse Cyber-Defense Campus](https://www.ar.admin.ch/en/armasuisse-wissenschaft-und-technologie-w-t/cyber-defence_campus.html).
 
 ## How to use
 
