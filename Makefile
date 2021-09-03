@@ -18,14 +18,3 @@ clean:
 lint: build
 	docker run --rm -v "${PWD}:/home/dis-cover/dis-cover" -it dis-cover black .
 	docker run --rm -v "${PWD}:/home/dis-cover/dis-cover" -it dis-cover clang-format -i case_studies/*.cpp
-
-.PHONY=analyze_packages
-analyze_packages:
-	docker build -t dis-cover-analysis ./packages_analysis/
-	docker run dis-cover-analysis > analysis.pickle
-	python3 packages_analysis/process.py
-
-.PHONY=jupyter-notebook
-jupyter-notebook:
-	docker build -t dis-cover-notebook -f ./packages_analysis/Dockerfile.notebook ./packages_analysis/
-	docker run -p 8888:8888 -v ${PWD}/packages_analysis:/home/jovyan/work dis-cover-notebook
