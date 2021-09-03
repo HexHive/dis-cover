@@ -14,8 +14,8 @@ from setuptools import find_packages, setup, Command
 # Package meta-data.
 NAME = "dis-cover"
 DESCRIPTION = "Disasemble binaries and recover as much info as possible."
-URL = "https://github.com/louismerlin/dis-cover"
-EMAIL = "louis.merlin@epfl.ch"
+URL = "https://github.com/hexhive/dis-cover"
+EMAIL = "hello@louismerl.in"
 AUTHOR = "Louis Merlin"
 REQUIRES_PYTHON = ">=3.6.0"
 
