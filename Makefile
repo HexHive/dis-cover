@@ -4,8 +4,8 @@ build:
 		--build-arg USER_ID=$(shell id -u) \
 		--build-arg GROUP_ID=$(shell id -g) .
 
-.PHONY=run_scenarios
-run_scenarios: build
+.PHONY=run_case_studies
+run_case_studies: build
 	docker run --rm -v "${PWD}:/home/dis-cover/dis-cover" -it dis-cover bash -c "\
 		pip install -e /home/dis-cover/dis-cover &&\
 		find ./case_studies/ -iname '*.cpp' -exec python ./case_studies/test_case_study.py {} \;"
