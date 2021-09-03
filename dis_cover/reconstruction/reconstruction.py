@@ -67,17 +67,6 @@ def int_to_bytes(i, width=2):
     return bytes.fromhex(hex(i)[2:].zfill(width * 2))[::-1]
 
 
-class ELFHeader:
-    """ELF header builder"""
-
-    def __init__(self, analysis):
-        self.data = b""
-
-    def build(self):
-        """Build the ELF header"""
-        pass
-
-
 class ProgramHeaderTable:
     """Program header table builder"""
 
@@ -109,28 +98,6 @@ class ProgramHeaderTable:
         row += int_to_bytes(header["p_memsz"], width=8)
         row += int_to_bytes(header["p_align"], width=8)
         self.data += row
-
-
-class Sections:
-    """Sections builder"""
-
-    def __init__(self, analysis):
-        self.data = b""
-
-    def build(self):
-        """Build the sections"""
-        pass
-
-
-class SectionHeaderTable:
-    """Section header table builder"""
-
-    def __init__(self, analysis):
-        self.data = b""
-
-    def build(self):
-        """Build the section header table"""
-        pass
 
 
 class Reconstruction:
@@ -204,7 +171,6 @@ class Reconstruction:
                 section_header += self.create_section_header(section.header)
             # The other sections (we squash them)
             else:
-                # TODO set SHT_NOBITS flag
                 section_data += bytes(section.header["sh_size"])
                 section_header += self.create_section_header(section.header)
 
@@ -300,16 +266,12 @@ class Reconstruction:
         )
 
         debug_abbrev += struct.pack(
-            "11Bxx",
+            "9Bxx",
             2,
             ENUM_DW_TAG["DW_TAG_class_type"],
             ENUM_DW_CHILDREN["DW_CHILDREN_yes"],
             ENUM_DW_AT["DW_AT_containing_type"],
             ENUM_DW_FORM["DW_FORM_ref4"],
-            ENUM_DW_AT[
-                "DW_AT_calling_convention"
-            ],  # TODO is calling_convention: data1 expandable ?
-            ENUM_DW_FORM["DW_FORM_data1"],
             ENUM_DW_AT["DW_AT_name"],
             ENUM_DW_FORM["DW_FORM_strp"],
             ENUM_DW_AT["DW_AT_byte_size"],
@@ -336,8 +298,7 @@ class Reconstruction:
         # The root DIE
         debug_info += b"\x01"  # abbrev number
         debug_info += b"\x21\x00"  # language (C++)
-        # TODO figure out which is 8byte and which is 4
-        # (in theory, both are 8)
+        # In theory, both of the following values a 8 bytes long
         debug_info += b"\x00\x00\x00\x00\x00\x00\x00\x00"  # low_pc
         debug_info += b"\x00\x00\x00\x00"  # ranges
 
@@ -347,13 +308,12 @@ class Reconstruction:
             # Class
             type_location = (
                 len(debug_info) + 4
-            )  # TODO find out what happens with multiple inheritance for the containing type
+            )
             debug_info += b"\x02"  # abbrev number
             debug_info += int_to_bytes(type_location, width=4)  # containing type
-            debug_info += b"\x04"  # calling_convention
             debug_info += int_to_bytes(len(debug_str), width=4)  # name
             debug_info += (
-                b"\x08"  # byte_size # TODO maybe find out the size of the class
+                b"\x08"  # byte_size | maybe we can find out the size of the class ?
             )
 
             # We add the name to debug_str
@@ -457,7 +417,7 @@ class Reconstruction:
             symtab += b"\x00"  # st_other
             symtab += int_to_bytes(self.st_shndx, width=2)  # st_shndx (.data.rel.ro id)
             symtab += int_to_bytes(cpp_class.address, width=8)  # st_value
-            symtab += b"\x10\x00\x00\x00\x00\x00\x00\x00"  # st_size # TODO
+            symtab += b"\x10\x00\x00\x00\x00\x00\x00\x00"  # st_size
 
             strtab += b"_ZTI" + mangle(cpp_class.name).encode() + b"\x00"
 
@@ -469,7 +429,7 @@ class Reconstruction:
                 symtab += int_to_bytes(cpp_class.vtable_address, width=8)  # st_value
             except:
                 symtab += b"\x00" * 8  # st_value
-            symtab += b"\x20\x00\x00\x00\x00\x00\x00\x00"  # st_size # TODO
+            symtab += b"\x20\x00\x00\x00\x00\x00\x00\x00"  # st_size
 
             strtab += b"_ZTV" + mangle(cpp_class.name).encode() + b"\x00"
 
